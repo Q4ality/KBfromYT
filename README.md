@@ -131,6 +131,7 @@ Specs: [product](docs/PRODUCT_SPEC.md), [architecture](docs/ARCHITECTURE.md),
 [data model](docs/DATA_MODEL.md), [retrieval](docs/RETRIEVAL.md),
 [evaluation](docs/EVALUATION.md), [decisions](docs/DECISIONS.md).
 Implementation milestones and recorded results: [plan](plans/00-mvp.md).
+Next planned cycle: [quality baseline, chat source scope and retry protection](plans/11-quality-scope-retries.md).
 
 ## Development
 
