@@ -152,8 +152,10 @@ def report(
         snapshot = store.snapshot_hash()
     try:
         revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], text=True).strip())
     except (OSError, subprocess.CalledProcessError):
         revision = "unavailable"
+        dirty = None
 
     def aggregate(reviewed_only):
         selected_rows = [
@@ -173,6 +175,8 @@ def report(
     return {
         "metadata": {
             "git_revision": revision,
+            "worktree_dirty": dirty,
+            "runner_hash": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "benchmark_version": benchmark.version,
             "split": split,
             "benchmark_hash": hashlib.sha256(benchmark.model_dump_json().encode()).hexdigest(),

@@ -65,3 +65,15 @@ semantic chunking or that synthetic fixture metrics measure real-world quality.
 - Report retrieved excerpt coverage and traces. Abstention scopes its claim to the
   retrieved passages. Explain speakers' attributed positions while preserving the
   distinction between source arguments and independently established conclusions.
+
+## Version 0.5
+
+- A conversation selects the entire library, a playlist or specific videos. The
+  server enforces that selection through search, context and citations; changing
+  selection starts another conversation. Saved answers retain their original scope.
+- Pending browser requests have stable IDs and an owner-scoped durable ledger.
+  Lost completed responses are recoverable without new model calls. Interrupted
+  provider work is explicit and never silently retried or described as free.
+- A 50-case candidate benchmark has versioned splits, scope and source annotations,
+  separate lexical/hybrid evaluation, and a human-review sheet. Candidate metrics
+  do not become human-reviewed quality claims without actual source/claim review.

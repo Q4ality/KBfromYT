@@ -39,6 +39,12 @@
           <details><summary>Indexed videos</summary><ul id="library-videos"></ul></details>
         </div>
       </details>
+      <div class="chat-scope">
+        <label>Chat sources<select id="chat-scope"><option value="library">Entire library</option><option value="videos">Selected videos</option></select></label>
+        <label id="chat-video-label" hidden>Choose videos<select id="chat-videos" multiple size="4" aria-label="Selected chat videos"></select></label>
+        <span id="chat-scope-count" class="source-meta" role="status">Loading sources…</span>
+      </div>
+      <div id="request-recovery" class="readiness" role="status" hidden><span id="recovery-message"></span> <button id="recover-request" type="button" class="secondary">Recover answer</button><button id="new-attempt" type="button" class="secondary" hidden>Prepare a new attempt</button></div>
       <button id="load-older" type="button" class="secondary" hidden>Load older messages</button>
       <section class="chat-panel" aria-label="Video knowledge base chat">
         <div id="messages" class="messages" aria-live="polite" aria-relevant="additions">

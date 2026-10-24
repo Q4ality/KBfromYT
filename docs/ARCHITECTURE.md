@@ -73,3 +73,16 @@ overviews as routing hints, generic query facets and video diversity, then suppl
 original evidence to the same quote/provenance/support checks. Response traces and
 excerpt coverage make the difference between retrieved support and whole-corpus
 knowledge visible. No external summary generation or agents framework is needed.
+
+Chat scope resolves server-side into request-local allowed video IDs. Tool filters
+can narrow that selection but cannot expand it; source registration and citation
+validation enforce the same boundary. The resident Corpus is never temporarily
+mutated for a caller. A conversation's immutable scope isolates recent memory.
+
+An owner/request ledger identifies first turns before the browser knows the
+conversation ID. Browser reconnects inspect saved state before considering a
+resubmission. SQLite commits the saved turn and request result together; replaying
+a completed result uses its original snapshot rather than running retrieval again.
+Provider completion and a SQLite commit are not one external transaction, so a
+crash between them remains explicitly uncertain and requires an intentional new
+attempt. No exactly-once billing guarantee is made.

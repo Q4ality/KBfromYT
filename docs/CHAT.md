@@ -1,6 +1,6 @@
 # Local RAG chat
 
-Version 0.4 serves a plain browser UI from FastAPI. The existing 20-video playlist
+Version 0.5 serves a plain browser UI from FastAPI. The existing 20-video playlist
 and multilingual index stay local. The configured OpenAI model handles query
 planning, cited answer generation and a separate support assessment.
 
@@ -32,7 +32,35 @@ data are ignored by Git. Existing process environment variables take precedence.
 Restart the server after changing configuration. The server never sends the key
 to the browser. Do not paste it into a question.
 
-## Configuration
+## Choose conversation sources and recover a request
+
+**Chat sources** selects the entire library, one imported playlist or explicitly
+selected videos. An empty or unavailable selection cannot silently expand to the
+whole library. The server applies the selection to lexical/dense search, overview
+anchors, context and final citations. Coverage shows selected and total library
+counts. This control is separate from the overview-navigation selector.
+
+Changing chat sources starts a new conversation and preserves the previous chat.
+Reopening a saved chat restores its scope and only its recent memory. A playlist
+scope uses its current imported membership for a new turn; each saved answer keeps
+the original resolved video IDs and source snapshot. Previously saved answers retain
+their citations even if the current library changes.
+
+The browser establishes its owner cookie before enabling questions and retains a
+pending request ID/payload in session storage. If a response is lost, it checks the
+owner-scoped saved request and restores a completed answer without new model calls.
+Reloading the tab can recover pending work too. An interrupted/cancelled request
+may already have incurred provider work: **Prepare a new attempt** restores the
+question for an explicit new submission rather than automatically calling again.
+If no request record exists, **Resend same request** preserves the original ID.
+Cleared owner cookies prevent recovery of that owner's requests or conversations.
+
+Saved results, request records and history have the same indefinite local retention
+in this release; there is no automatic purge or account synchronization. Failed or
+cancelled attempts do not enter model memory. App-state schema version 2 migrates
+legacy conversation scope to Entire library, with a pre-migration state backup.
+
+## Configuration settings
 
 | Setting | Default |
 | --- | --- |

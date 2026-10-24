@@ -55,3 +55,16 @@ each window back to its original document ID/level, with exact start/end charact
 offsets and token count. Grouped hits still return original IDs to existing retrieval.
 Chat envelopes add retrieval steps and coverage with defaults, so old saved responses
 remain readable. Traces contain queries and IDs, without hidden reasoning or keys.
+
+Version 0.5 adds a typed `SourceScope` (library, playlist, video IDs).
+Conversations persist scope intent; answer envelopes retain scope, actual resolved
+video IDs and the source snapshot. Legacy envelopes/conversations default to the
+entire library. Changing scope creates another conversation to separate memory.
+
+App-state schema version 2 adds `conversations.scope` and `chat_requests`, keyed by
+hashed owner and client request ID. Requests persist a canonical question/scope/mode
+fingerprint, conversation mapping, state and optional result. The initial mapping
+is committed before provider work. Result and history turn commit atomically.
+Running/queued requests left by a prior process become interrupted on service start.
+Cancelled or ambiguous work does not silently restart. Rows remain with local
+history; neither provider credentials nor hidden reasoning are stored.

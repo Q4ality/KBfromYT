@@ -2,8 +2,9 @@
 
 A local YouTube transcript knowledge base with source timestamps, hierarchical
 retrieval and a reproducible evaluation harness. Python 3.12+, no service or API
-key needed for the offline baseline. Version 0.4.0 includes browser RAG chat,
-playlist management, cleaned captions, saved conversations and source-linked overviews.
+key needed for the offline baseline. Version 0.5.0 includes browser RAG chat,
+playlist management, cleaned captions, saved conversations, source-linked overviews,
+conversation source selection and recovery of saved answers after a lost response.
 
 **Installing on another machine?** Follow the [local deployment guide](docs/LOCAL_DEPLOYMENT.md)
 for Windows/Linux/macOS setup, library transfer, backups and readiness checks.
@@ -131,7 +132,9 @@ Specs: [product](docs/PRODUCT_SPEC.md), [architecture](docs/ARCHITECTURE.md),
 [data model](docs/DATA_MODEL.md), [retrieval](docs/RETRIEVAL.md),
 [evaluation](docs/EVALUATION.md), [decisions](docs/DECISIONS.md).
 Implementation milestones and recorded results: [plan](plans/00-mvp.md).
-Next planned cycle: [quality baseline, chat source scope and retry protection](plans/11-quality-scope-retries.md).
+Latest cycle: [quality baseline, chat source scope and retry protection](plans/11-quality-scope-retries.md).
+The [50-case candidate benchmark and human-review workflow](docs/QUALITY_REVIEW.md)
+keep retrieval scores separate from reviewed answer quality.
 
 ## Development
 

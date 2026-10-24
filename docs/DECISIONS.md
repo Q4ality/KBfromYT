@@ -53,6 +53,16 @@
     independently and collapse repeated openings, so identical introductions do not
     occupy the evidence budget merely because they occur in different videos.
 
+21. Keep candidate retrieval scores separate from human-reviewed answer quality.
+    Reserve related question families together and record source/configuration
+    versions. The prior 20-case results remain historical, not a current quality claim.
+22. Scope belongs to a conversation and resolves for each new turn. Enforce it
+    through retrieval and citation registration, not only the model prompt.
+23. Persist an owner/request identity before provider calls; commit the recovered
+    result with the saved turn. Replay saved results after connection loss, while
+    treating interrupted external provider work as uncertain rather than retrying
+    it automatically.
+
 Requirements from the prior discussion about phase review gates were proposals.
 The current user request authorizes specs, planning and the first implementation
 in one pass. Deferred research features remain explicit future milestones.

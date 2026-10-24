@@ -8,6 +8,17 @@ let savedCount = 0;
 let viewTurns = [];
 let libraryPoll = null;
 let overviewCount = 0;
+let ownerReady = false;
+let ownerMarker = null;
+let scopeValid = false;
+let currentScope = {kind:"library",playlist_id:null,video_ids:[]};
+let scopeLibrary = {videos:[],playlists:[]};
+let pendingRequest = null;
+let recoveryTimer = null;
+let recoveryBusy = false;
+let resendAllowed = false;
+try { pendingRequest = JSON.parse(sessionStorage.getItem("kb_pending_request") || "null"); } catch {}
+if(pendingRequest && !/^[A-Za-z0-9_-]{8,80}$/.test(pendingRequest.payload?.request_id||""))pendingRequest=null;
 const welcomeTemplate = $("welcome").cloneNode(true);
 try { currentConversation = localStorage.getItem("kb_current_chat"); } catch {}
 const labels = {grounded:"Cited answer",partial:"Partial source support",no_support:"Insufficient retrieved evidence",verification_failed:"Verification failed",error:"Request failed"};
@@ -20,14 +31,18 @@ function element(tag, text, className) {
 function scrollChat() { $("messages").scrollTop = $("messages").scrollHeight; }
 function setBusy(value) {
   busy = value;
-  $("send").disabled = value || !ready;
-  $("reset").disabled = value;
-  $("question").disabled = value;
+  $("send").disabled = value || !ready || !ownerReady || !scopeValid || Boolean(pendingRequest);
+  $("reset").disabled = value || Boolean(pendingRequest);
+  $("question").disabled = value || Boolean(pendingRequest);
+  $("chat-scope").disabled = value || Boolean(pendingRequest);
+  $("chat-videos").disabled = value || Boolean(pendingRequest);
+  $("recover-request").disabled=value||recoveryBusy;
+  $("new-attempt").disabled=value||recoveryBusy;
   $("composer").setAttribute("aria-busy", String(value));
   $("import-playlist").disabled = value || libraryBusy;
   $("rebuild-library").disabled = value || libraryBusy;
   $("load-older").disabled = value;
-  document.querySelectorAll(".conversation-button").forEach(button => { button.disabled = value; });
+  document.querySelectorAll(".conversation-button").forEach(button => { button.disabled = value || Boolean(pendingRequest); });
 }
 function bubble(who, text) {
   $("welcome")?.remove();
@@ -85,7 +100,7 @@ function answer(reply) {
   if(reply.coverage?.evidence_passages || reply.retrieval?.length) {
     const trace=element("details",undefined,"search-trace");
     const c=reply.coverage;
-    trace.append(element("summary",`Retrieved ${c.evidence_passages} passages from ${c.evidence_videos} of ${c.library_videos} videos`));
+    trace.append(element("summary",`Retrieved ${c.evidence_passages} passages from ${c.evidence_videos} of ${c.scope_videos??c.library_videos} selected videos (${c.library_videos} in library)`));
     trace.append(element("p","This describes the retrieved excerpts, not a review of every video."));
     const items=element("ul");for(const step of reply.retrieval||[])items.append(element("li",`${step.tool}: ${step.query||"Neighboring source context"} · ${step.chunk_ids.length} candidates`));
     trace.append(items);body.append(trace);
@@ -103,28 +118,90 @@ async function loadStatus() {
   } catch { ready = false; $("readiness").textContent = "Cannot connect to the local chat server."; $("readiness").classList.add("problem"); }
   setBusy(busy);
 }
-$("composer").addEventListener("submit", async event => {
-  event.preventDefault(); const message = $("question").value.trim();
-  if (!message || busy || !ready) return;
-  bubble("user", message); $("question").value = ""; setBusy(true);
-  const pending = bubble("assistant"); pending.append(element("span","Searching your library and checking sources…","pending"));
-  const controller = new AbortController(); const timeout = setTimeout(()=>controller.abort(),65000);
+function savePending() {
+  try { if(pendingRequest)sessionStorage.setItem("kb_pending_request",JSON.stringify(pendingRequest));else sessionStorage.removeItem("kb_pending_request"); }
+  catch { $("readiness").textContent="Browser storage is unavailable. Keep this page open to recover a lost response."; }
+}
+function recoveryNotice(message, allowNew=false) {
+  $("request-recovery").hidden=false;$("recovery-message").textContent=message;
+  $("new-attempt").hidden=!allowNew;setBusy(busy);
+}
+async function finishPending(reply) {
+  clearTimeout(recoveryTimer);pendingRequest=null;savePending();
+  $("request-recovery").hidden=true;resendAllowed=false;setBusy(false);
+  if(reply.conversation_id)await openConversation(reply.conversation_id);
+  else if(!viewTurns.some(turn=>turn.answer.reply_id===reply.reply_id)){answer(reply);viewTurns.push({seq:null,question:"",answer:reply});}
+  await loadConversations();$("question").focus();
+}
+async function recoverPending() {
+  clearTimeout(recoveryTimer);
+  if(!pendingRequest||recoveryBusy||busy)return;
+  recoveryBusy=true;setBusy(false);
   try {
-    const response = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,body:JSON.stringify({message,request_id:crypto.randomUUID(),conversation_id:currentConversation})});
-    if (!response.ok) throw new Error();
-    const reply = await response.json(); pending.parentElement.remove(); answer(reply);
-    viewTurns.push({seq:null,question:message,answer:reply});
-    if (reply.conversation_id) { selectConversation(reply.conversation_id); await loadConversations(); }
-  } catch {
-    pending.textContent = "The request failed or timed out. No source-grounded answer was displayed. Try again."; pending.classList.add("notice","error");
-  } finally { clearTimeout(timeout); setBusy(false); $("question").focus(); }
+    await loadConversations();
+    if(!ownerReady)throw new Error();
+    if(pendingRequest.owner_marker!==ownerMarker){
+      recoveryNotice("This browser identity changed. The previous request cannot be recovered here; a new attempt may be charged.",true);return;
+    }
+    const response=await fetch(`/api/requests/${encodeURIComponent(pendingRequest.payload.request_id)}`);
+    if(response.status===404){
+      resendAllowed=true;$("recover-request").textContent="Resend same request";
+      recoveryNotice("No saved request was found. Resending keeps the same request ID.");return;
+    }
+    if(!response.ok)throw new Error();const record=await response.json();
+    resendAllowed=false;$("recover-request").textContent="Recover answer";
+    if(record.state==="completed"&&record.answer){await finishPending(record.answer);return;}
+    if(record.state==="queued"||record.state==="running"){
+      recoveryNotice("Your original request is still in progress. Waiting for its result…");
+      recoveryTimer=setTimeout(recoverPending,1500);return;
+    }
+    pendingRequest.recovered_conversation=record.conversation_id;savePending();
+    recoveryNotice(record.notice||"The attempt ended without a recoverable answer. A new attempt may be charged.",true);
+  }catch {recoveryNotice("Cannot check the original request. Recover again when the server is reachable.");}
+  finally {recoveryBusy=false;setBusy(busy);}
+}
+async function sendPending() {
+  if(!pendingRequest||busy)return;setBusy(true);resendAllowed=false;
+  await loadConversations();
+  if(!ownerReady||pendingRequest.owner_marker!==ownerMarker){
+    setBusy(false);recoveryNotice("This browser identity is unavailable or changed. The previous request may have incurred provider work; a new attempt may be charged.",true);return;
+  }
+  $("recover-request").textContent="Recover answer";
+  recoveryNotice("Searching the selected sources and checking citations…");
+  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),65000);
+  try {
+    const response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,body:JSON.stringify(pendingRequest.payload)});
+    if(!response.ok)throw new Error();const reply=await response.json();
+    if(reply.error_code?.startsWith("request_")){
+      setBusy(false);recoveryNotice(reply.notice,true);return;
+    }
+    if(reply.status==="error"&&reply.usage?.provider_requests){setBusy(false);await recoverPending();return;}
+    await finishPending(reply);
+  }catch {setBusy(false);recoveryNotice("The connection was lost. Checking whether the original answer was saved…");await recoverPending();}
+  finally {clearTimeout(timeout);setBusy(false);}
+}
+$("recover-request").addEventListener("click",()=>resendAllowed?sendPending():recoverPending());
+$("new-attempt").addEventListener("click",async ()=>{
+  if(!pendingRequest||busy)return;clearTimeout(recoveryTimer);
+  const old=pendingRequest;pendingRequest=null;savePending();$("request-recovery").hidden=true;
+  if(old.owner_marker!==ownerMarker){await newConversation();}
+  else if(old.recovered_conversation)selectConversation(old.recovered_conversation);
+  currentScope=old.payload.scope;renderChatScope();$("question").value=old.payload.message;
+  setBusy(false);$("question").focus();
+});
+$("composer").addEventListener("submit",async event=>{
+  event.preventDefault();const message=$("question").value.trim();
+  if(!message||busy||!ready||!ownerReady||!scopeValid||pendingRequest)return;
+  pendingRequest={owner_marker:ownerMarker,payload:{message,request_id:crypto.randomUUID(),conversation_id:currentConversation,scope:currentScope}};
+  savePending();bubble("user",message);$("question").value="";await sendPending();
 });
 $("question").addEventListener("keydown", event => { if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {event.preventDefault(); $("composer").requestSubmit();} });
-$("reset").addEventListener("click", async () => {
-  if (busy) return; setBusy(true);
-  try { const response=await fetch("/api/chat/reset",{method:"POST"});if(!response.ok)throw new Error(); selectConversation(null);viewTurns=[];clearMessages();await loadConversations();setBusy(false);$("question").focus(); }
-  catch { $("readiness").textContent="Could not reset the chat. Please try again.";setBusy(false); }
-});
+async function newConversation() {
+  if (busy||pendingRequest) return false; setBusy(true);
+  try { const response=await fetch("/api/chat/reset",{method:"POST"});if(!response.ok)throw new Error(); selectConversation(null);viewTurns=[];clearMessages();await loadConversations();setBusy(false);$("question").focus();return true; }
+  catch { $("readiness").textContent="Could not reset the chat. Please try again.";setBusy(false);return false; }
+}
+$("reset").addEventListener("click",newConversation);
 document.addEventListener("click",event=>{const button=event.target.closest("[data-query]");if(button){$("question").value=button.dataset.query;$("question").focus();}});
 
 function selectConversation(id) {
@@ -139,6 +216,7 @@ async function loadConversations(more=false) {
   try {
     const response=await fetch(`/api/conversations?offset=${more?savedCount:0}`);if(!response.ok)throw new Error();
     const data=await response.json();
+    ownerReady=true;ownerMarker=data.owner_marker;
     if(!more){$("conversation-list").replaceChildren();savedCount=0;}
     for(const conversation of data.conversations){
       const button=element("button",conversation.title,"conversation-button");button.type="button";
@@ -149,7 +227,7 @@ async function loadConversations(more=false) {
     }
     if(!savedCount)$("conversation-list").append(element("p","Your conversations will be saved here."));
     $("more-conversations").hidden=!data.has_more;setBusy(busy);
-  } catch { $("conversation-list").replaceChildren(element("p","Saved chats could not be loaded.")); }
+  } catch { ownerReady=false;$("conversation-list").replaceChildren(element("p","Saved chats could not be loaded. Reload before submitting a question."));setBusy(busy); }
 }
 async function openConversation(id,older=false) {
   if(busy)return;setBusy(true);
@@ -157,6 +235,7 @@ async function openConversation(id,older=false) {
     const suffix=older&&viewTurns.length?`?before=${viewTurns[0].seq}`:"";
     const response=await fetch(`/api/conversations/${encodeURIComponent(id)}${suffix}`);if(!response.ok)throw new Error();
     const data=await response.json();selectConversation(id);
+    currentScope=data.scope||{kind:"library",playlist_id:null,video_ids:[]};renderChatScope();
     viewTurns=older?[...data.turns,...viewTurns]:data.turns;
     clearMessages();
     for(const turn of viewTurns){bubble("user",turn.question);answer(turn.answer);}
@@ -174,13 +253,14 @@ async function loadLibrary() {
   try {
     const response=await fetch("/api/library");if(!response.ok)throw new Error();const data=await response.json();
     libraryBusy=Boolean(data.active_job);
+    scopeLibrary=data;renderChatScope();
     $("library-summary").textContent=`· ${data.videos.length} videos`;
     $("library-videos").replaceChildren(...data.videos.map(v=>element("li",`${v.title} · ${v.language.toUpperCase()} · ${v.chunks} chunks`)));
     $("playlist-list").replaceChildren();
     const selectedScope=$("overview-scope").value;$("overview-scope").replaceChildren();
     const allOption=element("option","Entire library");allOption.value="";$("overview-scope").append(allOption);
     for(const playlist of data.playlists){const p=element("p");const link=element("a",`Playlist · ${playlist.video_ids.length} imported videos ↗`);link.href=playlist.url;link.target="_blank";link.rel="noopener noreferrer";p.append(link);$("playlist-list").append(p);}
-    for(const playlist of data.playlists){const option=element("option",`${playlist.id} · ${playlist.video_ids.length} videos`);option.value=playlist.id;$("overview-scope").append(option);}
+    for(const playlist of data.playlists){const option=element("option",`${playlist.title||playlist.id} · ${playlist.video_ids.length} videos`);option.value=playlist.id;$("overview-scope").append(option);}
     $("overview-scope").value=selectedScope;
     if(data.index?.count)$("index-summary").textContent=`${data.index.documents||data.index.count} source documents · ${data.index.count} embedding windows · ${data.index.token_limit||"—"} tokens per window`;
     const progress=$("library-progress");progress.replaceChildren();
@@ -226,8 +306,42 @@ async function loadOverviews(more=false){
 $("overview-panel").addEventListener("toggle",()=>{if($("overview-panel").open)loadOverviews();});
 $("overview-scope").addEventListener("change",()=>loadOverviews());
 $("more-overviews").addEventListener("click",()=>loadOverviews(true));
+function renderChatScope() {
+  const select=$("chat-scope");select.replaceChildren();
+  for(const [value,label] of [["library","Entire library"],["videos","Selected videos"]]){
+    const option=element("option",label);option.value=value;select.append(option);
+  }
+  for(const playlist of scopeLibrary.playlists){
+    const option=element("option",`Playlist · ${playlist.title||playlist.id}`);option.value=`playlist:${playlist.id}`;select.append(option);
+  }
+  const value=currentScope.kind==="playlist"?`playlist:${currentScope.playlist_id}`:currentScope.kind;
+  if(!Array.from(select.options).some(option=>option.value===value)){
+    const option=element("option","Unavailable playlist");option.value=value;select.append(option);
+  }
+  select.value=value;$("chat-video-label").hidden=currentScope.kind!=="videos";
+  const videos=$("chat-videos");videos.replaceChildren();
+  const chosen=new Set(currentScope.video_ids||[]);
+  for(const video of scopeLibrary.videos){const option=element("option",video.title);option.value=video.id;option.selected=chosen.has(video.id);videos.append(option);}
+  for(const id of chosen)if(!scopeLibrary.videos.some(video=>video.id===id)){
+    const option=element("option",`Unavailable video · ${id}`);option.value=id;option.selected=true;videos.append(option);
+  }
+  const selected=currentScope.kind==="library"?scopeLibrary.videos.map(video=>video.id):currentScope.kind==="videos"?[...chosen]:(scopeLibrary.playlists.find(playlist=>playlist.id===currentScope.playlist_id)?.video_ids||[]);
+  scopeValid=selected.length>0&&selected.every(id=>scopeLibrary.videos.some(video=>video.id===id));
+  $("chat-scope-count").textContent=scopeValid?`${new Set(selected).size} selected videos · Changing sources starts a new chat` : "Choose available sources before asking a question";
+  setBusy(busy);
+}
+async function changeChatScope() {
+  if(busy||pendingRequest){renderChatScope();return;}
+  const value=$("chat-scope").value;
+  const next=value.startsWith("playlist:")?{kind:"playlist",playlist_id:value.slice(9),video_ids:[]}:
+    {kind:value,playlist_id:null,video_ids:value==="videos"?Array.from($("chat-videos").selectedOptions,option=>option.value).sort():[]};
+  if(await newConversation()){currentScope=next;renderChatScope();}else renderChatScope();
+}
+$("chat-scope").addEventListener("change",changeChatScope);
+$("chat-videos").addEventListener("change",changeChatScope);
 async function start() {
   await loadConversations();await loadLibrary();
   if(currentConversation)await openConversation(currentConversation);
+  if(pendingRequest){currentScope=pendingRequest.payload.scope;renderChatScope();await recoverPending();}
 }
 start();

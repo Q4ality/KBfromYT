@@ -1,6 +1,7 @@
 # Quality baseline, chat source scope and retry protection
 
-Created 2026-10-25. Status: planned; implementation has not started.
+Created 2026-10-25. Status: technical implementation complete; human benchmark
+review and a new paid answer comparison remain pending.
 
 This plan covers the three items selected at the end of the gap analysis:
 quality measurement, explicit chat source scoping, and safe recovery of chat
@@ -103,11 +104,11 @@ transcripts, full answer reports, credentials and runtime artifacts under ignore
 
 ### A3. Acceptance
 
-- [ ] All 50 cases have valid IDs, scopes, source bounds and explicit review status.
+- [x] All 50 cases have valid IDs, scopes, source bounds and explicit review status.
 - [ ] Human review of relevance, qualifications and expected support is recorded;
   provisional cases remain excluded from claims about reviewed quality.
-- [ ] Versioned development/held-out splits and current retrieval baseline exist.
-- [ ] A report distinguishes retrieval quality, answer quality and support labels.
+- [x] Versioned development/held-out splits and current retrieval baseline exist.
+- [x] A report distinguishes retrieval quality, answer quality and support labels.
 - [ ] Failure categories identify the next retrieval experiments; no model/reranker
   change is made solely to improve a few handpicked demonstrations.
 
@@ -165,14 +166,14 @@ not a new account/authorization system; existing owner checks still apply.
 
 ### B3. Acceptance
 
-- [ ] Two contrasting fixture playlists cannot leak evidence into each other through
+- [x] Two contrasting fixture playlists cannot leak evidence into each other through
   any retrieval route, tool-filter override, parent/neighbor expansion or citation.
-- [ ] Entire-library behavior remains available and legacy history opens correctly.
-- [ ] Selected videos, overlapping playlists, empty/deleted selections and changed
+- [x] Entire-library behavior remains available and legacy history opens correctly.
+- [x] Selected videos, overlapping playlists, empty/deleted selections and changed
   playlist membership have explicit, tested behavior.
-- [ ] Saved conversation scope restores after reload/restart; switching it starts
+- [x] Saved conversation scope restores after reload/restart; switching it starts
   a new conversation and prevents cross-scope memory.
-- [ ] Citation links, raw segment IDs and source timestamps remain unchanged.
+- [x] Citation links, raw segment IDs and source timestamps remain unchanged.
 
 ## Workstream C: recover requests without accidental resubmission
 
@@ -221,17 +222,17 @@ caller observes the existing work/result rather than starting another model loop
 
 ### C3. Acceptance
 
-- [ ] A completed response lost before reaching the browser is recovered with zero
+- [x] A completed response lost before reaching the browser is recovered with zero
   additional provider calls, one saved turn and one displayed answer.
-- [ ] First-turn loss, page reload, concurrent duplicates and replay after restart
+- [x] First-turn loss, page reload, concurrent duplicates and replay after restart
   resolve to the same conversation/result when completion was persisted.
-- [ ] Same ID with changed question/scope/mode conflicts without a provider call.
-- [ ] A different owner cannot inspect or recover the request.
-- [ ] Interrupted or ambiguous provider work never restarts automatically and is
+- [x] Same ID with changed question/scope/mode conflicts without a provider call.
+- [x] A different owner cannot inspect or recover the request.
+- [x] Interrupted or ambiguous provider work never restarts automatically and is
   not described as a guaranteed free retry.
-- [ ] Library changes after completion do not invalidate replay of the original
+- [x] Library changes after completion do not invalidate replay of the original
   answer; a new intentional submission uses the current resolved source selection.
-- [ ] Existing durable-history and cancellation regressions continue to pass.
+- [x] Existing durable-history and cancellation regressions continue to pass.
 
 ## Implementation order and expected files
 
@@ -274,17 +275,60 @@ evaluation against a recorded snapshot; separately identify any live provider ca
 their usage and whether human review was completed. Do not require a paid benchmark
 inside ordinary CI.
 
-- [ ] Workstream A acceptance recorded; pending human/live checks remain explicit.
-- [ ] Workstream B and C offline/API/browser acceptance passes.
-- [ ] No regression in provenance, support notices, history ownership or memory bounds.
-- [ ] Required tests/lint pass; migration backup/recovery is checked on fixtures.
-- [ ] Current baseline and final results are comparable; regressions are explained.
-- [ ] Product/data/architecture/usage docs reflect actual implementation, and changes
+- [x] Workstream A implementation recorded; human/live acceptance remains pending.
+- [x] Workstream B and C offline/API/browser acceptance passes.
+- [x] No regression in provenance, support notices, history ownership or memory bounds.
+- [x] Required tests/lint pass; migration backup/recovery is checked on fixtures.
+- [x] Current development retrieval reports compare modes on the same source snapshot;
+  no before/after answer-quality claim is made.
+- [x] Product/data/architecture/usage docs reflect actual implementation, and changes
   are committed/pushed through the existing repository workflow.
 
 ## Verification record
 
-Planning only: repository instructions, architecture/data/retrieval/evaluation specs
-and current chat/history/request contracts were reviewed. No implementation tests,
-paid requests, source/index modifications or service restarts were performed for
-this planning change. Implementation and live/human validation are pending.
+Recorded 2026-10-25:
+
+- Original 20-case lexical results frozen before runtime changes in
+  `data/live/evaluation-before-step11.json`; historical benchmark retained in Git.
+- Fifty candidate cases validate against the source IDs/intervals and declared
+  selections. Related families stay together in a 35/15 split. Legacy topics were
+  previously examined, so the reserved split is not described as pristine/blind.
+  No reserved query rankings were run in this cycle.
+- Development candidate lexical Recall@5/10: 0.4643/0.5000; hybrid: 0.5357/0.6071.
+  Candidate MRR@5: 0.3208/0.3833; NDCG@5: 0.3559/0.4213. Both have zero scope
+  violations. Reports share source snapshot
+  `916a1296a821c1a52b94a822f4f196ff06690258fa2e41b217cb8884ab54efb4`.
+- Reports, all-case source validation and review sheet are under ignored
+  `data/live/quality-*.json`. These initial runs used the in-progress working tree;
+  future reports also record dirty-tree state and runner hash. No source/index
+  representation or retrieval-scoring model was changed in this cycle.
+- 123 offline tests passed. Scope tests cover lexical and deterministic dense
+  paths, overview anchors, tool overrides, context, citation rejection, overlapping
+  playlists, membership changes, scope/memory separation and old history defaults.
+- Recovery tests assert provider-call counts and one saved turn/result across
+  concurrent duplicates, lost first responses, restart, changed scope/payload,
+  another owner, cancellation, an abandoned request and a real SQLite transaction
+  rollback after turn insertion but before request-result commit.
+- Browser fixture QA confirmed scope changes start a fresh conversation, selected
+  playlist citations exclude the other fixture video, saved scope survives reload,
+  empty video selection disables Send, and deliberately discarded first responses
+  recover into one displayed answer. Reloading during a slow scripted request
+  observed existing work and recovered one result without resubmission. Console
+  checks were clean; screenshot: `data/live/scope-recovery-qa.jpg`.
+- Ruff lint/format, JavaScript syntax, `pip check`, strict offline doctor and the
+  isolated offline README walkthrough passed. App-state migration creates a backup;
+  repeated fixture startup does not create another migration or erase history.
+- The real app was stopped for the local hybrid evaluation and restarted with the
+  existing 20-video library. Readiness is true, five existing conversations remain,
+  and app-state schema version 2/request ledger are present. No YouTube ingestion,
+  source/index rebuild, new embedding download or paid OpenAI request was performed.
+- The original CLI import had no playlist membership row. The existing saved
+  manifest was checked against all 20 source IDs, then registered in backed-up
+  app state so the real playlist is available in the new chat selector immediately.
+- Three reviewable commits separate evaluation foundations, server enforcement/
+  durable state, and browser/release documentation. Version 0.5.0 records this cycle.
+
+Pending: a person must review gold relevance, attributed expected points and hard
+negatives using `docs/QUALITY_REVIEW.md`. Human-reviewed scores and numerical answer
+targets remain unset. A new paid simple-vs-agent answer comparison and human claim
+review have not been run; old status-agreement scores are not current quality proof.
