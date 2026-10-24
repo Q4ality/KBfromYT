@@ -1,27 +1,1456 @@
 {
   "name": "Katyn playlist chat regression set",
   "playlist_id": "PLHfd11lpeE2ij70tf2a7V2fNko7zeSx6B",
-  "review_status": "Source passages checked by assistant; human relevance and entailment review pending",
+  "review_status": "Candidate annotations; human relevance and entailment review pending",
   "cases": [
-    {"id":"d1","category":"direct","question":"В каком разделе обвинительного акта, по словам автора 13-го выпуска, упоминается Катынь?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"AXzfhCTp7Cs","start":3807.2,"end":3884.52}]},
-    {"id":"d2","category":"direct","question":"Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"hLDmyM3b0CA","start":369.199,"end":423.639}]},
-    {"id":"d3","category":"direct","question":"Кто, по словам автора 17-го выпуска, работал до приезда комиссии Бурденко?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"1mGASff04v8","start":1516.72,"end":1596.76}]},
-    {"id":"d4","category":"direct","question":"Как автор шестого выпуска описывает назначение специальной комиссии Бурденко?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"hLDmyM3b0CA","start":1973.12,"end":2045.76}]},
-    {"id":"d5","category":"direct","question":"С каким литературным произведением автор седьмого выпуска сравнивает невероятное совпадение списков фамилий?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"GKoqfjamBVE","start":2791.4,"end":2866.4}]},
-    {"id":"d6","category":"direct","question":"Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"GKoqfjamBVE","start":3300.319,"end":3381.119}]},
-    {"id":"d7","category":"direct","question":"Кого и по сколько с каждой стороны, по словам автора четвёртого выпуска, разрешил допросить трибунал?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"SCPa3FxN87w","start":4542.84,"end":4607.28}]},
-    {"id":"d8","category":"direct","question":"Какой вопрос о послевоенной судьбе Аренса автор обещает обсудить в начале третьего выпуска?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"934F6_YdfaI","start":45.52,"end":113.92}]},
-    {"id":"p1","category":"paraphrase","question":"Какие меры с компрометирующими бумагами автор четвёртого выпуска считает логичными до объявления по радио?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"SCPa3FxN87w","start":1080.039,"end":1148.72}]},
-    {"id":"p2","category":"paraphrase","question":"Почему автор четвёртого выпуска связывает название версии с руководителем нацистской пропаганды?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"SCPa3FxN87w","start":1751.159,"end":1822.44}]},
-    {"id":"p3","category":"paraphrase","question":"Что именно, по мнению автора седьмого выпуска, расстраивало Геббельса в найденных боеприпасах?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"GKoqfjamBVE","start":1298.08,"end":1358.72}]},
-    {"id":"p4","category":"paraphrase","question":"Как автор девятнадцатого выпуска трактует выражение о переводе офицера в письме от 31 октября 1943 года?","setup_question":null,"expected_status":"grounded","relevant":[{"video_id":"NIAgHQ5sLKo","start":7155.599,"end":7243.119}]},
-    {"id":"f1","category":"followup","question":"А какая правовая система, по его словам, доминировала на этом процессе?","setup_question":"Что автор шестого выпуска говорит о правовых нормах Нюрнбергского трибунала?","expected_status":"grounded","relevant":[{"video_id":"hLDmyM3b0CA","start":369.199,"end":423.639}]},
-    {"id":"f2","category":"followup","question":"А каким литературным сравнением он поясняет невероятность этого совпадения?","setup_question":"Что автор седьмого выпуска говорит о совпадении порядка фамилий в списках?","expected_status":"grounded","relevant":[{"video_id":"GKoqfjamBVE","start":2791.4,"end":2866.4}]},
-    {"id":"f3","category":"followup","question":"А сколько свидетелей с каждой стороны, по словам автора, разрешили допросить?","setup_question":"Что автор четвёртого выпуска говорит о правилах допроса свидетелей в Нюрнберге?","expected_status":"grounded","relevant":[{"video_id":"SCPa3FxN87w","start":4542.84,"end":4607.28}]},
-    {"id":"u1","category":"unanswerable","question":"Как приготовить тирамису по рецепту, приведённому в этих видео?","setup_question":null,"expected_status":"no_support","relevant":[]},
-    {"id":"u2","category":"unanswerable","question":"Какие команды настройки Kubernetes для этой базы знаний приведены в видео?","setup_question":null,"expected_status":"no_support","relevant":[]},
-    {"id":"u3","category":"unanswerable","question":"Какую погоду в Будапеште на завтра прогнозирует автор в этих видео?","setup_question":null,"expected_status":"no_support","relevant":[]},
-    {"id":"m1","category":"partial","question":"Какую правовую систему автор шестого выпуска называет доминировавшей на процессе и какую погоду он прогнозирует в Будапеште на завтра?","setup_question":null,"expected_status":"partial","relevant":[{"video_id":"hLDmyM3b0CA","start":369.199,"end":423.639}]},
-    {"id":"m2","category":"partial","question":"Как автор седьмого выпуска описывает фиксацию показаний свидетелей и какие команды настройки Kubernetes он рекомендует?","setup_question":null,"expected_status":"partial","relevant":[{"video_id":"GKoqfjamBVE","start":3300.319,"end":3381.119}]}
-  ]
+    {
+      "id": "d1",
+      "category": "direct",
+      "question": "В каком разделе обвинительного акта, по словам автора 13-го выпуска, упоминается Катынь?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "AXzfhCTp7Cs",
+          "start": 3807.2,
+          "end": 3884.52
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "indictment",
+      "required_points": [
+        "В каком разделе обвинительного акта, по словам автора 13-го выпуска, упоминается Катынь?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d2",
+      "category": "direct",
+      "question": "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 369.199,
+          "end": 423.639
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "heldout",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d3",
+      "category": "direct",
+      "question": "Кто, по словам автора 17-го выпуска, работал до приезда комиссии Бурденко?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "1mGASff04v8",
+          "start": 1516.72,
+          "end": 1596.76
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "commission",
+      "required_points": [
+        "Кто, по словам автора 17-го выпуска, работал до приезда комиссии Бурденко?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "heldout",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d4",
+      "category": "direct",
+      "question": "Как автор шестого выпуска описывает назначение специальной комиссии Бурденко?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 1973.12,
+          "end": 2045.76
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "commission",
+      "required_points": [
+        "Как автор шестого выпуска описывает назначение специальной комиссии Бурденко?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "heldout",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d5",
+      "category": "direct",
+      "question": "С каким литературным произведением автор седьмого выпуска сравнивает невероятное совпадение списков фамилий?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 2791.4,
+          "end": 2866.4
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "С каким литературным произведением автор седьмого выпуска сравнивает невероятное совпадение списков фамилий?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d6",
+      "category": "direct",
+      "question": "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 3300.319,
+          "end": 3381.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d7",
+      "category": "direct",
+      "question": "Кого и по сколько с каждой стороны, по словам автора четвёртого выпуска, разрешил допросить трибунал?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 4542.84,
+          "end": 4607.28
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "Кого и по сколько с каждой стороны, по словам автора четвёртого выпуска, разрешил допросить трибунал?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "heldout",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d8",
+      "category": "direct",
+      "question": "Какой вопрос о послевоенной судьбе Аренса автор обещает обсудить в начале третьего выпуска?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "934F6_YdfaI",
+          "start": 45.52,
+          "end": 113.92
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "ahrens",
+      "required_points": [
+        "Какой вопрос о послевоенной судьбе Аренса автор обещает обсудить в начале третьего выпуска?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "p1",
+      "category": "paraphrase",
+      "question": "Какие меры с компрометирующими бумагами автор четвёртого выпуска считает логичными до объявления по радио?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 1080.039,
+          "end": 1148.72
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "papers",
+      "required_points": [
+        "Какие меры с компрометирующими бумагами автор четвёртого выпуска считает логичными до объявления по радио?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "p2",
+      "category": "paraphrase",
+      "question": "Почему автор четвёртого выпуска связывает название версии с руководителем нацистской пропаганды?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 1751.159,
+          "end": 1822.44
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "papers",
+      "required_points": [
+        "Почему автор четвёртого выпуска связывает название версии с руководителем нацистской пропаганды?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "p3",
+      "category": "paraphrase",
+      "question": "Что именно, по мнению автора седьмого выпуска, расстраивало Геббельса в найденных боеприпасах?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 1298.08,
+          "end": 1358.72
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "ammunition",
+      "required_points": [
+        "Что именно, по мнению автора седьмого выпуска, расстраивало Геббельса в найденных боеприпасах?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "p4",
+      "category": "paraphrase",
+      "question": "Как автор девятнадцатого выпуска трактует выражение о переводе офицера в письме от 31 октября 1943 года?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "NIAgHQ5sLKo",
+          "start": 7155.599,
+          "end": 7243.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "letter",
+      "required_points": [
+        "Как автор девятнадцатого выпуска трактует выражение о переводе офицера в письме от 31 октября 1943 года?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "f1",
+      "category": "followup",
+      "question": "А какая правовая система, по его словам, доминировала на этом процессе?",
+      "setup_question": "Что автор шестого выпуска говорит о правовых нормах Нюрнбергского трибунала?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 369.199,
+          "end": 423.639
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "А какая правовая система, по его словам, доминировала на этом процессе?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "heldout",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "f2",
+      "category": "followup",
+      "question": "А каким литературным сравнением он поясняет невероятность этого совпадения?",
+      "setup_question": "Что автор седьмого выпуска говорит о совпадении порядка фамилий в списках?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 2791.4,
+          "end": 2866.4
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "А каким литературным сравнением он поясняет невероятность этого совпадения?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "f3",
+      "category": "followup",
+      "question": "А сколько свидетелей с каждой стороны, по словам автора, разрешили допросить?",
+      "setup_question": "Что автор четвёртого выпуска говорит о правилах допроса свидетелей в Нюрнберге?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 4542.84,
+          "end": 4607.28
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "А сколько свидетелей с каждой стороны, по словам автора, разрешили допросить?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "heldout",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "u1",
+      "category": "unanswerable",
+      "question": "Как приготовить тирамису по рецепту, приведённому в этих видео?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "irrelevant-food",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "u2",
+      "category": "unanswerable",
+      "question": "Какие команды настройки Kubernetes для этой базы знаний приведены в видео?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "irrelevant-kubernetes",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "u3",
+      "category": "unanswerable",
+      "question": "Какую погоду в Будапеште на завтра прогнозирует автор в этих видео?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "irrelevant-weather",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "m1",
+      "category": "partial",
+      "question": "Какую правовую систему автор шестого выпуска называет доминировавшей на процессе и какую погоду он прогнозирует в Будапеште на завтра?",
+      "setup_question": null,
+      "expected_status": "partial",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 369.199,
+          "end": 423.639
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "Какую правовую систему автор шестого выпуска называет доминировавшей на процессе и какую погоду он прогнозирует в Будапеште на завтра?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "heldout",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "m2",
+      "category": "partial",
+      "question": "Как автор седьмого выпуска описывает фиксацию показаний свидетелей и какие команды настройки Kubernetes он рекомендует?",
+      "setup_question": null,
+      "expected_status": "partial",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 3300.319,
+          "end": 3381.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "Как автор седьмого выпуска описывает фиксацию показаний свидетелей и какие команды настройки Kubernetes он рекомендует?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "assistant_inspected",
+      "split": "development",
+      "tags": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "d9",
+      "category": "direct",
+      "question": "В какой части обвинительного акта автор 13-го выпуска находит упоминание Катыни?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "AXzfhCTp7Cs",
+          "start": 3807.2,
+          "end": 3884.52
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "indictment",
+      "required_points": [
+        "В каком разделе обвинительного акта, по словам автора 13-го выпуска, упоминается Катынь?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "d10",
+      "category": "direct",
+      "question": "Как автор шестого выпуска формулирует задачу комиссии Бурденко?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 1973.12,
+          "end": 2045.76
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "commission",
+      "required_points": [
+        "Как автор шестого выпуска описывает назначение специальной комиссии Бурденко?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "d11",
+      "category": "direct",
+      "question": "Что в найденных боеприпасах, по словам автора седьмого выпуска, огорчало Геббельса?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 1298.08,
+          "end": 1358.72
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "ammunition",
+      "required_points": [
+        "Что именно, по мнению автора седьмого выпуска, расстраивало Геббельса в найденных боеприпасах?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "d12",
+      "category": "direct",
+      "question": "Как автор 19-го выпуска понимает слово «перевод» в письме от 31 октября 1943 года?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "NIAgHQ5sLKo",
+          "start": 7155.599,
+          "end": 7243.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "letter",
+      "required_points": [
+        "Как автор девятнадцатого выпуска трактует выражение о переводе офицера в письме от 31 октября 1943 года?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "p5",
+      "category": "paraphrase",
+      "question": "According to episode six, which legal tradition dominated the Nuremberg proceedings?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 369.199,
+          "end": 423.639
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "cross-language"
+      ]
+    },
+    {
+      "id": "p6",
+      "category": "paraphrase",
+      "question": "How does the author of episode seven say witness testimony was recorded?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 3300.319,
+          "end": 3381.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "cross-language"
+      ]
+    },
+    {
+      "id": "p7",
+      "category": "paraphrase",
+      "question": "What literary comparison does episode seven use for the coincidence of name lists?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 2791.4,
+          "end": 2866.4
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "С каким литературным произведением автор седьмого выпуска сравнивает невероятное совпадение списков фамилий?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "cross-language"
+      ]
+    },
+    {
+      "id": "p8",
+      "category": "paraphrase",
+      "question": "How many witnesses per side does episode four say the tribunal permitted?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 4542.84,
+          "end": 4607.28
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "Кого и по сколько с каждой стороны, по словам автора четвёртого выпуска, разрешил допросить трибунал?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "cross-language"
+      ]
+    },
+    {
+      "id": "f4",
+      "category": "followup",
+      "question": "В каком его разделе упомянута Катынь?",
+      "setup_question": "Что автор 13-го выпуска говорит об обвинительном акте?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "AXzfhCTp7Cs",
+          "start": 3807.2,
+          "end": 3884.52
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "indictment",
+      "required_points": [
+        "В каком разделе обвинительного акта, по словам автора 13-го выпуска, упоминается Катынь?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "f5",
+      "category": "followup",
+      "question": "А каким способом их фиксировали?",
+      "setup_question": "Как в седьмом выпуске обсуждаются показания свидетелей?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 3300.319,
+          "end": 3381.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "f6",
+      "category": "followup",
+      "question": "Что в них расстраивало Геббельса, по словам автора?",
+      "setup_question": "Что говорится о найденных боеприпасах в седьмом выпуске?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 1298.08,
+          "end": 1358.72
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "ammunition",
+      "required_points": [
+        "Что именно, по мнению автора седьмого выпуска, расстраивало Геббельса в найденных боеприпасах?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "f7",
+      "category": "followup",
+      "question": "Как он трактует упомянутый там перевод офицера?",
+      "setup_question": "Что в 19-м выпуске говорится о письме от 31 октября 1943 года?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "NIAgHQ5sLKo",
+          "start": 7155.599,
+          "end": 7243.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "letter",
+      "required_points": [
+        "Как автор девятнадцатого выпуска трактует выражение о переводе офицера в письме от 31 октября 1943 года?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "new-candidate"
+      ]
+    },
+    {
+      "id": "f8",
+      "category": "followup",
+      "question": "Какая правовая система, по его словам, там доминировала?",
+      "setup_question": "Что автор шестого выпуска говорит о Нюрнбергском процессе?",
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 369.199,
+          "end": 423.639
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "memory-boundary"
+      ],
+      "setup_turns": [
+        "О чём шестой выпуск?",
+        "Какие источники доступны?",
+        "Продолжим обсуждать шестой выпуск."
+      ]
+    },
+    {
+      "id": "u4",
+      "category": "unanswerable",
+      "question": "Каков точный SHA-256 оригинального документа комиссии Бурденко, по словам автора?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "negative-4",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "in-topic-hard-negative",
+        "absence-needs-human-review"
+      ]
+    },
+    {
+      "id": "u5",
+      "category": "unanswerable",
+      "question": "Какой номер современной цифровой записи ДНК каждого погибшего приводит автор?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "negative-5",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "in-topic-hard-negative",
+        "absence-needs-human-review"
+      ]
+    },
+    {
+      "id": "u6",
+      "category": "unanswerable",
+      "question": "Какой полный машиночитаемый список всех офицеров с координатами каждой могилы дан в серии?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "negative-6",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "in-topic-hard-negative",
+        "absence-needs-human-review"
+      ]
+    },
+    {
+      "id": "m3",
+      "category": "partial",
+      "question": "Как, по словам автора, фиксировали показания свидетелей и какой SHA-256 всех этих записей он приводит?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 3300.319,
+          "end": 3381.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "realistic-partial"
+      ]
+    },
+    {
+      "id": "m4",
+      "category": "partial",
+      "question": "В какой части обвинительного акта упомянута Катынь и каков точный хеш оригинального файла этого документа?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "AXzfhCTp7Cs",
+          "start": 3807.2,
+          "end": 3884.52
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "indictment",
+      "required_points": [
+        "В каком разделе обвинительного акта, по словам автора 13-го выпуска, упоминается Катынь?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "realistic-partial"
+      ]
+    },
+    {
+      "id": "b1",
+      "category": "broad",
+      "question": "Кто убил польских офицеров в Катыни?",
+      "setup_question": null,
+      "expected_status": "partial",
+      "relevant": [
+        {
+          "video_id": "YRpYiiF3Bmw",
+          "start": 150.68,
+          "end": 230.48
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "position",
+      "required_points": [
+        "Attribute the position to the speaker.",
+        "Distinguish the speaker from the opponent quoted in the passage."
+      ],
+      "qualifications": [
+        "The series is not independent verification of the historical event.",
+        "Do not assign quoted objections or conditional reasoning to the narrator."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "original-regression",
+        "attribution",
+        "quoted-opponent"
+      ]
+    },
+    {
+      "id": "b2",
+      "category": "broad",
+      "question": "Какую позицию о виновниках расстрела польских офицеров выражает автор серии?",
+      "setup_question": null,
+      "expected_status": "partial",
+      "relevant": [
+        {
+          "video_id": "YRpYiiF3Bmw",
+          "start": 150.68,
+          "end": 230.48
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "position",
+      "required_points": [
+        "Attribute the position to the speaker.",
+        "Distinguish the speaker from the opponent quoted in the passage."
+      ],
+      "qualifications": [
+        "The series is not independent verification of the historical event.",
+        "Do not assign quoted objections or conditional reasoning to the narrator."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "original-regression",
+        "attribution",
+        "quoted-opponent"
+      ]
+    },
+    {
+      "id": "b3",
+      "category": "broad",
+      "question": "What does the author argue about responsibility for the Katyn killings?",
+      "setup_question": null,
+      "expected_status": "partial",
+      "relevant": [
+        {
+          "video_id": "YRpYiiF3Bmw",
+          "start": 150.68,
+          "end": 230.48
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "position",
+      "required_points": [
+        "Attribute the position to the speaker.",
+        "Distinguish the speaker from the opponent quoted in the passage."
+      ],
+      "qualifications": [
+        "The series is not independent verification of the historical event.",
+        "Do not assign quoted objections or conditional reasoning to the narrator."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "original-regression",
+        "attribution",
+        "quoted-opponent"
+      ]
+    },
+    {
+      "id": "b4",
+      "category": "broad",
+      "question": "Как автор отделяет свою позицию от возражений Романова?",
+      "setup_question": null,
+      "expected_status": "partial",
+      "relevant": [
+        {
+          "video_id": "YRpYiiF3Bmw",
+          "start": 150.68,
+          "end": 230.48
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "position",
+      "required_points": [
+        "Attribute the position to the speaker.",
+        "Distinguish the speaker from the opponent quoted in the passage."
+      ],
+      "qualifications": [
+        "The series is not independent verification of the historical event.",
+        "Do not assign quoted objections or conditional reasoning to the narrator."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "original-regression",
+        "attribution",
+        "quoted-opponent"
+      ]
+    },
+    {
+      "id": "b5",
+      "category": "broad",
+      "question": "Какие особенности правовой системы и правил допроса обсуждаются в шестом и четвёртом выпусках?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 369.199,
+          "end": 423.639
+        },
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 4542.84,
+          "end": 4607.28
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "legal",
+      "required_points": [
+        "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?",
+        "Кого и по сколько с каждой стороны, по словам автора четвёртого выпуска, разрешил допросить трибунал?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "cross-video"
+      ]
+    },
+    {
+      "id": "b6",
+      "category": "broad",
+      "question": "Какие аргументы седьмого выпуска касаются списков фамилий и записи свидетельских показаний?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 2791.4,
+          "end": 2866.4
+        },
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 3300.319,
+          "end": 3381.119
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "lists",
+      "required_points": [
+        "С каким литературным произведением автор седьмого выпуска сравнивает невероятное совпадение списков фамилий?",
+        "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "multi-point"
+      ]
+    },
+    {
+      "id": "b7",
+      "category": "broad",
+      "question": "Как четвёртый выпуск связывает обращение с документами и пропагандистское объявление?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 1080.039,
+          "end": 1148.72
+        },
+        {
+          "video_id": "SCPa3FxN87w",
+          "start": 1751.159,
+          "end": 1822.44
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "papers",
+      "required_points": [
+        "Какие меры с компрометирующими бумагами автор четвёртого выпуска считает логичными до объявления по радио?",
+        "Почему автор четвёртого выпуска связывает название версии с руководителем нацистской пропаганды?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "multi-point"
+      ]
+    },
+    {
+      "id": "b8",
+      "category": "broad",
+      "question": "Что разные выпуски говорят о работе до приезда комиссии Бурденко и о назначении самой комиссии?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "1mGASff04v8",
+          "start": 1516.72,
+          "end": 1596.76
+        },
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 1973.12,
+          "end": 2045.76
+        }
+      ],
+      "scope": {
+        "kind": "library"
+      },
+      "family": "commission",
+      "required_points": [
+        "Кто, по словам автора 17-го выпуска, работал до приезда комиссии Бурденко?",
+        "Как автор шестого выпуска описывает назначение специальной комиссии Бурденко?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "cross-video"
+      ]
+    },
+    {
+      "id": "s1",
+      "category": "scope",
+      "question": "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "hLDmyM3b0CA",
+          "start": 369.199,
+          "end": 423.639
+        }
+      ],
+      "scope": {
+        "kind": "videos",
+        "video_ids": [
+          "hLDmyM3b0CA"
+        ]
+      },
+      "family": "legal",
+      "required_points": [
+        "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "scope-contrast"
+      ]
+    },
+    {
+      "id": "s2",
+      "category": "scope",
+      "question": "Какую правовую систему автор шестого выпуска называет доминировавшей на Нюрнбергском процессе?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "videos",
+        "video_ids": [
+          "GKoqfjamBVE"
+        ]
+      },
+      "family": "legal",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "heldout",
+      "tags": [
+        "scope-contrast",
+        "absence-needs-human-review"
+      ]
+    },
+    {
+      "id": "s3",
+      "category": "scope",
+      "question": "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?",
+      "setup_question": null,
+      "expected_status": "grounded",
+      "relevant": [
+        {
+          "video_id": "GKoqfjamBVE",
+          "start": 3300.319,
+          "end": 3381.119
+        }
+      ],
+      "scope": {
+        "kind": "videos",
+        "video_ids": [
+          "GKoqfjamBVE"
+        ]
+      },
+      "family": "lists",
+      "required_points": [
+        "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?"
+      ],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "scope-contrast"
+      ]
+    },
+    {
+      "id": "s4",
+      "category": "scope",
+      "question": "Как, по словам автора седьмого выпуска, были зафиксированы показания свидетелей?",
+      "setup_question": null,
+      "expected_status": "no_support",
+      "relevant": [],
+      "scope": {
+        "kind": "videos",
+        "video_ids": [
+          "hLDmyM3b0CA"
+        ]
+      },
+      "family": "lists",
+      "required_points": [],
+      "qualifications": [
+        "Report the speaker's position, not an independent historical verdict."
+      ],
+      "review_status": "provisional",
+      "split": "development",
+      "tags": [
+        "scope-contrast",
+        "absence-needs-human-review"
+      ]
+    }
+  ],
+  "version": "quality-50-v1"
 }

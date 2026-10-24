@@ -74,3 +74,17 @@ substring. This is a targeted regression check, not a general accuracy measureme
 Local query probes, final answer/trace, index metadata and screenshots are retained
 under ignored `data/live/`. No full paid benchmark was repeated. Human entailment and
 relevance review remains necessary; a valid quotation alone does not prove support.
+
+## Quality baseline and source-scope cycle
+
+The next cycle has a [50-case candidate benchmark and review workflow](QUALITY_REVIEW.md),
+with a 35/15 development/reserved split. All source bounds/selections validate
+against the current library. No cases have been upgraded to human-reviewed status.
+The old 20-case file and its measurements are preserved separately.
+
+Current development candidate Recall@5 is 0.4643 lexical and 0.5357 hybrid;
+Recall@10 is 0.5000 and 0.6071 respectively. Both reports have zero scope violations.
+These are deterministic retrieval runs with frozen setup-question concatenation;
+they are not a paid answer benchmark or evidence of human-rated correctness.
+Reviewed metrics remain null until a person reviews the annotations. Reserved
+query rankings and new paid answers have not been evaluated in this cycle.

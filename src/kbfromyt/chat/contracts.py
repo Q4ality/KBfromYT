@@ -3,11 +3,30 @@ from __future__ import annotations
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from kbfromyt.models import Contract
 
 Status = Literal["grounded", "partial", "no_support", "verification_failed", "error"]
+
+
+class SourceScope(Contract):
+    kind: Literal["library", "playlist", "videos"] = "library"
+    playlist_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{10,100}$")
+    video_ids: list[str] = Field(default_factory=list, max_length=1000)
+
+    @model_validator(mode="after")
+    def valid_selection(self):
+        import re
+
+        self.video_ids = sorted(set(self.video_ids))
+        if any(not re.fullmatch(r"[A-Za-z0-9_-]{11}", key) for key in self.video_ids):
+            raise ValueError("invalid video ID")
+        if (self.kind == "playlist") != bool(self.playlist_id):
+            raise ValueError("playlist scope requires exactly one playlist ID")
+        if (self.kind == "videos") != bool(self.video_ids):
+            raise ValueError("video scope requires a nonempty video selection")
+        return self
 
 
 class ChatRequest(Contract):
@@ -15,6 +34,7 @@ class ChatRequest(Contract):
     message: str = Field(min_length=1, max_length=8000)
     request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{8,80}$")
     agentic: bool = True
+    scope: SourceScope = Field(default_factory=SourceScope)
 
     @field_validator("message")
     @classmethod
@@ -88,9 +108,13 @@ class Coverage(Contract):
     evidence_videos: int = 0
     evidence_passages: int = 0
     omitted_passages: int = 0
+    scope_videos: int | None = None
 
 
 class AnswerEnvelope(Contract):
+    scope: SourceScope = Field(default_factory=SourceScope)
+    resolved_video_ids: list[str] = Field(default_factory=list)
+    source_snapshot: str | None = None
     retrieval: list[RetrievalStep] = Field(default_factory=list)
     coverage: Coverage = Field(default_factory=Coverage)
     conversation_id: str | None = None

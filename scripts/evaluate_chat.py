@@ -8,16 +8,23 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
+import math
+import statistics
+import subprocess
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlparse
 from uuid import uuid4
 
+from pydantic import Field, model_validator
+
 from kbfromyt.chat.config import ChatConfig
-from kbfromyt.chat.contracts import AnswerEnvelope, ChatRequest
+from kbfromyt.chat.contracts import AnswerEnvelope, ChatRequest, SourceScope
 from kbfromyt.chat.memory import configure_tokenizer
 from kbfromyt.chat.providers.openai import OpenAIProvider
+from kbfromyt.chat.scope import resolve_scope
 from kbfromyt.chat.service import ChatService
 from kbfromyt.chat.tools import Corpus
 from kbfromyt.evaluation import Gold, metrics
@@ -28,18 +35,52 @@ from kbfromyt.store import Store
 
 class ChatCase(Contract):
     id: str
-    category: Literal["direct", "paraphrase", "followup", "unanswerable", "partial"]
+    category: Literal[
+        "direct", "paraphrase", "followup", "unanswerable", "partial", "broad", "scope"
+    ]
     question: str
     setup_question: str | None
     expected_status: Literal["grounded", "partial", "no_support"]
     relevant: list[Gold]
+    scope: SourceScope = Field(default_factory=SourceScope)
+    setup_turns: list[str] = Field(default_factory=list)
+    required_points: list[str] = Field(default_factory=list)
+    qualifications: list[str] = Field(default_factory=list)
+    alternative_groups: list[list[Gold]] = Field(default_factory=list)
+    review_status: Literal["provisional", "assistant_inspected", "human_reviewed"] = "provisional"
+    reviewer: str | None = None
+    split: Literal["development", "heldout"] = "development"
+    family: str = ""
+    tags: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def reviewed(self):
+        if self.review_status == "human_reviewed" and not self.reviewer:
+            raise ValueError("human-reviewed cases require a reviewer")
+        if any(not group for group in self.alternative_groups):
+            raise ValueError("alternative groups must not be empty")
+        return self
 
 
 class ChatBenchmark(Contract):
+    version: str = "legacy-20"
     name: str
     playlist_id: str
     review_status: str
     cases: list[ChatCase]
+
+    @model_validator(mode="after")
+    def unique_cases(self):
+        ids = [case.id for case in self.cases]
+        if not ids or len(set(ids)) != len(ids):
+            raise ValueError("benchmark must have unique nonempty cases")
+        families = {}
+        for case in self.cases:
+            if case.family:
+                if case.family in families and families[case.family] != case.split:
+                    raise ValueError("related cases must stay in one split")
+                families[case.family] = case.split
+        return self
 
 
 def retrieval_report(benchmark: ChatBenchmark, config: ChatConfig) -> dict:
@@ -48,17 +89,23 @@ def retrieval_report(benchmark: ChatBenchmark, config: ChatConfig) -> dict:
     with Store(config.db) as store:
         videos = {p.video.video_id: p for p in store.videos()}
         for case in benchmark.cases:
+            allowed = resolve_scope(case.scope, set(videos), [])
             for gold in case.relevant:
                 if gold.video_id not in videos or gold.end > videos[gold.video_id].video.duration:
                     raise ValueError(f"Gold interval is not in this corpus: {case.id}")
-            query = " ".join(filter(None, [case.setup_question, case.question]))
+            previous = [*case.setup_turns, *([case.setup_question] if case.setup_question else [])]
+            query = " ".join([*previous[-3:], case.question])
             rows.append(
                 {
                     "id": case.id,
                     "category": case.category,
-                    "flat_parent_baseline": metrics(search(store, query, 5), case.relevant, 5),
+                    "flat_parent_baseline": metrics(
+                        search(store, query, 5, video_ids=allowed), case.relevant, 5
+                    ),
                     "bounded_parents": metrics(
-                        search(store, query, 5, parent_child_limit=3), case.relevant, 5
+                        search(store, query, 5, parent_child_limit=3, video_ids=allowed),
+                        case.relevant,
+                        5,
                     ),
                 }
             )
@@ -87,6 +134,64 @@ def retrieval_report(benchmark: ChatBenchmark, config: ChatConfig) -> dict:
     }
 
 
+def run_metadata(benchmark: ChatBenchmark, config: ChatConfig, snapshot: str) -> dict:
+    from kbfromyt.chat.agent import CHECK_INSTRUCTIONS, INSTRUCTIONS
+    from kbfromyt.processing import PROCESSING_VERSION
+    from kbfromyt.semantic import INDEX_VERSION
+
+    try:
+        revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], text=True).strip())
+    except (OSError, subprocess.CalledProcessError):
+        revision, dirty = "unavailable", None
+    return {
+        "git_revision": revision,
+        "worktree_dirty": dirty,
+        "benchmark_version": benchmark.version,
+        "benchmark_hash": hashlib.sha256(benchmark.model_dump_json().encode()).hexdigest(),
+        "case_ids": [c.id for c in benchmark.cases],
+        "source_snapshot": snapshot,
+        "processing_version": PROCESSING_VERSION,
+        "index_version": INDEX_VERSION,
+        "embedding_model": config.embedding_model,
+        "provider_model": config.model,
+        "prompt_hash": hashlib.sha256((INSTRUCTIONS + CHECK_INSTRUCTIONS).encode()).hexdigest(),
+        "budgets": {
+            key: getattr(config, key)
+            for key in ("input_budget", "evidence_budget", "max_requests", "max_tool_calls")
+        },
+    }
+
+
+def answer_summary(runs: list[dict]) -> dict:
+    answers = [r["answer"] for r in runs if r.get("answer")]
+    replies = [
+        part
+        for r in runs
+        for part in [*r.get("setup_turns", []), *([r["answer"]] if r.get("answer") else [])]
+    ]
+    latency = sorted(a["usage"]["latency_ms"] for a in answers)
+    return {
+        "completed": len(answers),
+        "matching_statuses": sum(bool(r.get("status_matches")) for r in runs),
+        "invalid_citation_provenance": sum(
+            r.get("citation_provenance_valid") is False for r in runs
+        ),
+        "provider_requests": sum(p["usage"]["provider_requests"] for p in replies),
+        "input_tokens": sum(p["usage"]["input_tokens"] for p in replies)
+        if all(p["usage"]["input_tokens"] is not None for p in replies)
+        else None,
+        "output_tokens": sum(p["usage"]["output_tokens"] for p in replies)
+        if all(p["usage"]["output_tokens"] is not None for p in replies)
+        else None,
+        "median_latency_ms": statistics.median(latency) if latency else None,
+        "p95_latency_ms": latency[math.ceil(0.95 * len(latency)) - 1] if latency else None,
+        "human_review_complete": False,
+        "unsupported_answer_rate": None,
+        "note": "Status agreement is not human-rated answer correctness.",
+    }
+
+
 async def live_report(
     benchmark: ChatBenchmark, config: ChatConfig, output: Path, compare: bool = False
 ) -> dict:
@@ -96,6 +201,7 @@ async def live_report(
     corpus = await asyncio.to_thread(Corpus, config)
     provider = OpenAIProvider(config)
     result = {
+        "metadata": run_metadata(benchmark, config, corpus.snapshot),
         "model": config.model,
         "endpoint_type": "Responses API",
         "dataset_snapshot": corpus.snapshot,
@@ -112,17 +218,34 @@ async def live_report(
             for case in benchmark.cases:
                 print(f"{mode}: {case.id}", flush=True)
                 session = None
-                if case.setup_question:
+                setup_replies = []
+                for question in [
+                    *case.setup_turns,
+                    *([case.setup_question] if case.setup_question else []),
+                ]:
                     session, setup = await service.chat(
-                        None, ChatRequest(message=case.setup_question, request_id=uuid4().hex)
+                        session,
+                        ChatRequest(message=question, request_id=uuid4().hex, scope=case.scope),
                     )
+                    setup_replies.append(setup.model_dump())
                     if setup.status == "error":
                         result["runs"].append(
-                            {"mode": mode, "id": case.id, "setup_error": setup.model_dump()}
+                            {
+                                "mode": mode,
+                                "id": case.id,
+                                "setup_error": setup.model_dump(),
+                                "setup_turns": setup_replies,
+                            }
                         )
                         break
+                if setup_replies and setup_replies[-1]["status"] == "error":
+                    output.write_text(
+                        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+                    )
+                    break
                 _, reply = await service.chat(
-                    session, ChatRequest(message=case.question, request_id=uuid4().hex)
+                    session,
+                    ChatRequest(message=case.question, request_id=uuid4().hex, scope=case.scope),
                 )
                 used = reply.citations
                 citation_correct = all(
@@ -141,6 +264,7 @@ async def live_report(
                         "status_matches": reply.status == case.expected_status,
                         "citation_provenance_valid": citation_correct,
                         "human_entailment_review": "pending",
+                        "setup_turns": setup_replies,
                         "answer": reply.model_dump(),
                     }
                 )
@@ -150,18 +274,7 @@ async def live_report(
                 # Do not spend the whole benchmark on a bad model/credential configuration.
                 if reply.status == "error":
                     break
-        result["summary"] = {
-            "completed": len(result["runs"]),
-            "matching_statuses": sum(bool(r.get("status_matches")) for r in result["runs"]),
-            "invalid_citation_provenance": sum(
-                r.get("citation_provenance_valid") is False for r in result["runs"]
-            ),
-            "provider_requests": sum(
-                r.get("answer", {}).get("usage", {}).get("provider_requests", 0)
-                for r in result["runs"]
-            ),
-            "human_review_complete": False,
-        }
+        result["summary"] = answer_summary(result["runs"])
         return result
     finally:
         await provider.close()
@@ -186,8 +299,10 @@ def main(argv=None):
         "--server", help="use the running loopback chat server; keeps the UI available"
     )
     parser.add_argument("--cases", nargs="+", help="run only these benchmark case IDs")
+    parser.add_argument("--split", choices=["development", "heldout"], default="development")
     args = parser.parse_args(argv)
     benchmark = ChatBenchmark.model_validate_json(args.file.read_text(encoding="utf-8"))
+    benchmark.cases = [case for case in benchmark.cases if case.split == args.split]
     if args.cases:
         unknown = set(args.cases) - {case.id for case in benchmark.cases}
         if unknown:
@@ -225,6 +340,7 @@ async def server_report(
         if not status["ready"] or "TEST FIXTURE" in (status.get("message") or ""):
             raise ValueError("live server is not ready or is a test fixture")
         result = {
+            "metadata": run_metadata(benchmark, config, snapshot),
             "model": status["model"],
             "endpoint_type": "standard OpenAI via local server",
             "dataset_snapshot": snapshot,
@@ -236,22 +352,41 @@ async def server_report(
             for case in benchmark.cases:
                 print(f"{mode}: {case.id}", flush=True)
                 client.cookies.clear()
+                initialized = await client.get("/api/conversations")
+                initialized.raise_for_status()
                 setup = None
-                if case.setup_question:
+                setup_replies = []
+                for question in [
+                    *case.setup_turns,
+                    *([case.setup_question] if case.setup_question else []),
+                ]:
                     response = await client.post(
                         "/api/chat",
                         json={
-                            "message": case.setup_question,
+                            "message": question,
+                            "scope": case.scope.model_dump(),
                             "request_id": uuid4().hex,
                             "agentic": mode == "agentic",
                         },
                     )
                     response.raise_for_status()
                     setup = AnswerEnvelope.model_validate(response.json())
+                    setup_replies.append(setup.model_dump())
+                    if setup.status == "error":
+                        break
+                if setup and setup.status == "error":
+                    result["runs"].append(
+                        {"mode": mode, "id": case.id, "setup_turns": setup_replies}
+                    )
+                    output.write_text(
+                        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+                    )
+                    break
                 response = await client.post(
                     "/api/chat",
                     json={
                         "message": case.question,
+                        "scope": case.scope.model_dump(),
                         "request_id": uuid4().hex,
                         "agentic": mode == "agentic",
                     },
@@ -275,6 +410,7 @@ async def server_report(
                         "citation_provenance_valid": correct,
                         "human_entailment_review": "pending",
                         "setup": setup.model_dump() if setup else None,
+                        "setup_turns": setup_replies,
                         "answer": reply.model_dump(),
                     }
                 )
@@ -283,19 +419,7 @@ async def server_report(
                 )
                 if reply.status == "error":
                     break
-        result["summary"] = {
-            "completed": len(result["runs"]),
-            "matching_statuses": sum(r["status_matches"] for r in result["runs"]),
-            "invalid_citation_provenance": sum(
-                not r["citation_provenance_valid"] for r in result["runs"]
-            ),
-            "provider_requests": sum(
-                (r.get(part) or {}).get("usage", {}).get("provider_requests", 0)
-                for r in result["runs"]
-                for part in ("setup", "answer")
-            ),
-            "human_review_complete": False,
-        }
+        result["summary"] = answer_summary(result["runs"])
         return result
 
 

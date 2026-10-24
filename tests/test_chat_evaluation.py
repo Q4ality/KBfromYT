@@ -14,7 +14,7 @@ from tests.test_chat import ScriptedProvider
 
 def test_twenty_case_playlist_benchmark_contract():
     benchmark = ChatBenchmark.model_validate_json(
-        Path("examples/chat-playlist-benchmark.json").read_text(encoding="utf-8")
+        Path("examples/chat-playlist-benchmark-v1.json").read_text(encoding="utf-8")
     )
     assert len(benchmark.cases) == 20
     assert Counter(c.category for c in benchmark.cases) == {
@@ -133,3 +133,31 @@ def test_dense_query_filters_document_ids(tmp_path, store, video):
         assert index.search(store, "trajectory", document_ids=[]) == [[], [], []]
     finally:
         index.close()
+
+
+def test_answer_summary_counts_all_setup_usage_and_preserves_unknown_tokens():
+    from kbfromyt.chat.contracts import AnswerEnvelope, Usage
+    from scripts.evaluate_chat import answer_summary
+
+    def reply(latency, tokens):
+        return AnswerEnvelope(
+            status="no_support",
+            model="fixture",
+            usage=Usage(
+                provider_requests=2, input_tokens=tokens, output_tokens=10, latency_ms=latency
+            ),
+        ).model_dump()
+
+    summary = answer_summary(
+        [
+            {
+                "status_matches": True,
+                "setup_turns": [reply(100, 20), reply(200, 30)],
+                "answer": reply(300, 40),
+            },
+            {"answer": reply(500, None)},
+        ]
+    )
+    assert summary["provider_requests"] == 8 and summary["input_tokens"] is None
+    assert summary["output_tokens"] == 40 and summary["median_latency_ms"] == 400
+    assert summary["p95_latency_ms"] == 500 and not summary["human_review_complete"]
