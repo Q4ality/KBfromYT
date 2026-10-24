@@ -19,7 +19,7 @@ raw provenance and index invalidation. Do not hide heuristic limitations.
 - [x] Implement processing, indexing and search (02–04).
 - [x] Implement evaluation, test offline lifecycle, lint and package install (05).
 - [x] Prepare validated v0.1.0 for the initial local main-branch commit.
-- [ ] Create private Q4ality/KBfromYT and push main; verify remote SHA (blocked).
+- [x] User created Q4ality/KBfromYT; push main over SSH and verify remote SHA.
 
 ## Verification and outcomes
 2026-10-24, Windows, Python 3.12:
@@ -37,13 +37,12 @@ raw provenance and index invalidation. Do not hide heuristic limitations.
 - Not run: live YouTube requests, actual FastEmbed model inference/download,
   Whisper model/audio inference, Ollama synthesis or remote CI at this checkpoint.
 
-## Delivery blocker
+## Delivery history (resolved)
 GitHub CLI authentication succeeds as Q4ality, but `gh repo create Q4ality/KBfromYT
 --private ...` was rejected by GitHub GraphQL: “Trade controls restricted owner
 can't create repositories., Trade controls restricted creator can't create
-repositories.” No remote repository was created and no push is possible to that
-nonexistent destination. This is a GitHub account restriction, not a local test
-failure. Resolve the restriction with GitHub before retrying the remote delivery.
+repositories.” At that point no remote repository was created, so the push was
+blocked. The user subsequently created the repository through GitHub.
 
 ### Existing SSH setup verified
 The chat “Clone repo and configure SSH” identifies a repository-local SSH setup
@@ -53,5 +52,10 @@ authenticates successfully to GitHub as Q4ality, and SSH `ls-remote` succeeds fo
 Q4ality/draft_room_intelligence. SSH `ls-remote` for Q4ality/KBfromYT returns
 “Repository not found.” No private key content was displayed or copied.
 This checkout now reuses that key and existing known_hosts with strict host checking
-and has the intended SSH origin configured. Authentication is verified; remote
-repository creation remains the outstanding blocker.
+and has the intended SSH origin configured.
+
+### Remote delivery completed
+After the user created https://github.com/Q4ality/KBfromYT, `git push -u origin main`
+succeeded over SSH. Remote main matched local commit
+`27a51e6ae924467aa2863039c437f3a7e0acf75d`, and the working tree was clean with
+main tracking origin/main. This completion note is committed and pushed afterward.
