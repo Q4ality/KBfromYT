@@ -48,6 +48,8 @@ def validate_draft(draft: Draft, registry: EvidenceRegistry) -> None:
             if not source or ref.quote not in source.evidence.text:
                 raise ValueError("unknown citation or nonliteral excerpt")
             e = source.evidence
+            if e.video_id not in registry.allowed:
+                raise ValueError("citation is outside the selected chat scope")
             p = registry.corpus.videos[e.video_id]
             raw = {s.id: s for s in p.segments}
             chunk = next(c for c in p.chunks if c.id == e.id)

@@ -75,8 +75,19 @@ class Agent:
     def __init__(self, config: ChatConfig, provider: Provider, corpus: Corpus):
         self.config, self.provider, self.corpus = config, provider, corpus
 
-    async def run(self, question: str, history: list[dict], retained: int) -> AnswerEnvelope:
-        registry = EvidenceRegistry(self.config, self.corpus, broad=broad_question(question))
+    async def run(
+        self,
+        question: str,
+        history: list[dict],
+        retained: int,
+        allowed_video_ids: list[str] | None = None,
+    ) -> AnswerEnvelope:
+        registry = EvidenceRegistry(
+            self.config,
+            self.corpus,
+            broad=broad_question(question),
+            allowed_video_ids=allowed_video_ids,
+        )
         usage = Usage(input_tokens=0, output_tokens=0, memory_turns=retained)
         started = time.monotonic()
 
@@ -265,6 +276,7 @@ class Agent:
             if registry.broad or any(t.tool == "search_overviews" for t in registry.trace)
             else "detail",
             library_videos=len(self.corpus.videos),
+            scope_videos=len(registry.allowed),
             evidence_videos=len({s.evidence.video_id for s in registry.sources.values()}),
             evidence_passages=len(registry.sources),
             omitted_passages=registry.omitted,

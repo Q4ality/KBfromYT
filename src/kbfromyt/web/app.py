@@ -11,12 +11,14 @@ from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import Field
 
 from kbfromyt.chat.config import ChatConfig
-from kbfromyt.chat.contracts import ChatRequest, SearchArgs
+from kbfromyt.chat.contracts import ChatRequest, SearchArgs, SourceScope
 from kbfromyt.chat.history import History
 from kbfromyt.chat.memory import configure_tokenizer
 from kbfromyt.chat.providers.openai import OpenAIProvider
+from kbfromyt.chat.scope import resolve_scope
 from kbfromyt.chat.service import ChatService
 from kbfromyt.chat.tools import Corpus
 from kbfromyt.semantic import INDEX_VERSION
@@ -24,6 +26,10 @@ from kbfromyt.store import Store
 from kbfromyt.web.library import Library, PlaylistRequest
 
 STATIC = Path(__file__).parent / "static"
+
+
+class PreviewRequest(SearchArgs):
+    scope: SourceScope = Field(default_factory=SourceScope)
 
 
 def create_app(config: ChatConfig | None = None, service: ChatService | None = None) -> FastAPI:
@@ -124,7 +130,14 @@ def create_app(config: ChatConfig | None = None, service: ChatService | None = N
         history = request.app.state.chat.history
         rows = history.list(token, offset) if history else []
         return owner_cookie(
-            JSONResponse({"conversations": rows[:100], "has_more": len(rows) > 100}), token
+            JSONResponse(
+                {
+                    "conversations": rows[:100],
+                    "has_more": len(rows) > 100,
+                    "owner_marker": History.owner(token),
+                }
+            ),
+            token,
         )
 
     @app.get("/api/conversations/{key}")
@@ -151,7 +164,7 @@ def create_app(config: ChatConfig | None = None, service: ChatService | None = N
         return start_library(request, body)
 
     @app.post("/api/library/search")
-    async def preview_retrieval(body: SearchArgs, request: Request, broad: bool = False):
+    async def preview_retrieval(body: PreviewRequest, request: Request, broad: bool = False):
         service = request.app.state.chat
         if service.maintenance:
             raise HTTPException(503, "Library maintenance is in progress.")
@@ -160,13 +173,30 @@ def create_app(config: ChatConfig | None = None, service: ChatService | None = N
                 raise HTTPException(503, "The source index is not ready.")
             steps = []
             try:
-                sources = await asyncio.to_thread(service.corpus.search, body, broad, steps)
+                allowed = resolve_scope(
+                    body.scope,
+                    set(service.corpus.videos),
+                    service.history.playlists() if service.history else [],
+                )
+                if body.video_ids_or_null is not None and set(body.video_ids_or_null) - set(
+                    allowed
+                ):
+                    raise ValueError("out-of-scope filter")
+                arguments = SearchArgs(
+                    query=body.query,
+                    k=body.k,
+                    video_ids_or_null=body.video_ids_or_null
+                    if body.video_ids_or_null is not None
+                    else allowed,
+                )
+                sources = await asyncio.to_thread(service.corpus.search, arguments, broad, steps)
             except ValueError as exc:
                 raise HTTPException(400, "Invalid source filter or stale index.") from exc
             return {
                 "mode": "overview" if broad else "detail",
                 "queries": steps,
                 "library_videos": len(service.corpus.videos),
+                "scope_videos": len(allowed),
                 "sources": [source.evidence.model_dump() for source in sources],
             }
 
@@ -198,9 +228,28 @@ def create_app(config: ChatConfig | None = None, service: ChatService | None = N
         except ValueError as exc:
             raise HTTPException(409, str(exc)) from exc
 
+    @app.get("/api/requests/{request_id}")
+    async def recover_request(request_id: str, request: Request):
+        if not re.fullmatch(r"[A-Za-z0-9_-]{8,80}", request_id):
+            raise HTTPException(404, "Request not found in this browser.")
+        try:
+            return request.app.state.chat.recover(owner(request), request_id)
+        except KeyError as exc:
+            raise HTTPException(404, "Request not found in this browser.") from exc
+
     @app.post("/api/chat")
     async def chat(body: ChatRequest, request: Request):
         token = owner(request)
+        if request.app.state.chat.history and not re.fullmatch(
+            r"[A-Za-z0-9_-]{43}", request.cookies.get("kb_owner", "")
+        ):
+            return owner_cookie(
+                JSONResponse(
+                    {"detail": "Initialize this browser using /api/conversations first."},
+                    status_code=409,
+                ),
+                token,
+            )
         task = asyncio.create_task(
             request.app.state.chat.chat(request.cookies.get("kb_session"), body, token)
         )

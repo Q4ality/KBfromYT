@@ -183,7 +183,13 @@ class Corpus:
 
 
 class EvidenceRegistry:
-    def __init__(self, config: ChatConfig, corpus: Corpus, broad: bool = False):
+    def __init__(
+        self,
+        config: ChatConfig,
+        corpus: Corpus,
+        broad: bool = False,
+        allowed_video_ids: list[str] | None = None,
+    ):
         self.config, self.corpus = config, corpus
         self.sources: dict[str, Source] = {}
         self.used_bytes = 0
@@ -191,10 +197,13 @@ class EvidenceRegistry:
         self.searches = self.expansions = self.executions = 0
         self.broad = broad
         self.trace: list[RetrievalStep] = []
+        self.allowed = set(corpus.videos if allowed_video_ids is None else allowed_video_ids)
 
     def register(self, sources: list[Source]) -> list[dict]:
         output = []
         for source in sources:
+            if source.evidence.video_id not in self.allowed:
+                raise ValueError("source is outside the selected chat scope")
             existing = next(
                 (key for key, s in self.sources.items() if s.evidence.id == source.evidence.id),
                 None,
@@ -236,6 +245,13 @@ class EvidenceRegistry:
                 raise ToolBudget("search budget exhausted")
             self.searches += 1
             args = SearchArgs.model_validate_json(arguments)
+            if args.video_ids_or_null is not None and set(args.video_ids_or_null) - self.allowed:
+                raise ValueError("tool filter is outside the selected chat scope")
+            args.video_ids_or_null = sorted(
+                self.allowed
+                if args.video_ids_or_null is None
+                else set(args.video_ids_or_null) & self.allowed
+            )
             broad = self.broad or name == "search_overviews"
             catalogue, steps = [], []
             if broad:
@@ -274,6 +290,7 @@ class EvidenceRegistry:
                 "video_overviews": catalogue,
                 "coverage": {
                     "library_videos": len(self.corpus.videos),
+                    "scope_videos": len(self.allowed),
                     "evidence_videos": len({s.evidence.video_id for s in self.sources.values()}),
                     "navigation_only": True,
                 },

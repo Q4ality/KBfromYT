@@ -8,7 +8,7 @@ import secrets
 import time
 from dataclasses import dataclass, field
 
-from kbfromyt.chat.contracts import AnswerEnvelope
+from kbfromyt.chat.contracts import AnswerEnvelope, SourceScope
 
 _encoder = None
 
@@ -38,6 +38,7 @@ def budget_size(value: object) -> int:
 
 @dataclass
 class Session:
+    scope: SourceScope = field(default_factory=SourceScope)
     conversation_id: str | None = None
     turns: list[tuple[str, AnswerEnvelope]] = field(default_factory=list)
     completed: dict[str, tuple[str, AnswerEnvelope]] = field(default_factory=dict)
