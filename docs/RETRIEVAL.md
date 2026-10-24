@@ -25,3 +25,16 @@ instructions to ignore source instructions and structured JSON output constraint
 Every returned claim must cite an existing evidence ID; malformed/unreferenced
 claims fail closed. Citation existence is validated; factual entailment still
 requires human evaluation. No transcript leaves the machine in default mode.
+
+Browser chat explicitly opts into OpenAI and uses the same hybrid retrieval with
+at most three selected children per parent candidate. Direct chunk hits remain
+available. Video filters apply to both lexical and dense paths. Context expansion
+accepts only fresh source handles and stays in the source chapter. Ranking controls
+are optional; existing CLI search defaults are preserved. The preliminary 20-case
+retrieval benchmark did not establish a quality gain from bounded parents.
+
+The agent reformulates retrieval queries using bounded recent history, then may
+refine once. Each cited quote must be a literal substring of its original chunk;
+source bounds and raw segment IDs are checked against the current corpus. A separate
+model-assisted support assessment removes rejected claims. This still requires
+source review and does not establish historical truth.

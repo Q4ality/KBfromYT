@@ -2,16 +2,31 @@
 
 A local YouTube transcript knowledge base with source timestamps, hierarchical
 retrieval and a reproducible evaluation harness. Python 3.12+, no service or API
-key needed for the offline baseline. Version 0.1.0.
+key needed for the offline baseline. Version 0.2.0 adds a local browser RAG chat.
 
 For the validated 20-video Russian playlist, isolated runtime setup and ready-to-run
 queries, see [the live environment guide](docs/LIVE_PLAYLIST.md).
+
+For the browser chat, see [setup and usage](docs/CHAT.md). It uses your OpenAI
+endpoint, remembers three recent exchanges, retrieves local transcripts and clearly
+highlights missing support. [Specification](docs/CHAT_UI_SPEC.md) ·
+[implementation and validation record](plans/07-rag-chat.md).
+
+With the live environment and playlist already present:
+
+```powershell
+# Put OPENAI_API_KEY in .env beside this README (see .env.example).
+.\scripts\start-chat.ps1
+```
+
+Open [the local chat](http://127.0.0.1:8000/). The default model is `gpt-6-luna`.
+Chat questions make billable OpenAI requests. The API key stays on the server.
 
 ## Quick start (PowerShell)
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python -m pip install -e ".[dev]"
+.\.venv\Scripts\python -m pip install -e ".[dev,chat]"
 .\.venv\Scripts\yt-kb import examples/demo.json
 .\.venv\Scripts\yt-kb import examples/demo.json
 .\.venv\Scripts\yt-kb stats
@@ -96,6 +111,9 @@ Specs: [product](docs/PRODUCT_SPEC.md), [architecture](docs/ARCHITECTURE.md),
 Implementation milestones and recorded results: [plan](plans/00-mvp.md).
 
 ## Development
+
+Install `.[dev,chat]` to run the full test suite. Provider tests use mock HTTP;
+ordinary tests do not call OpenAI or download embedding models.
 
 ```powershell
 python -m pytest

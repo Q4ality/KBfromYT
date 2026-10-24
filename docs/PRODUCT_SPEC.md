@@ -31,8 +31,16 @@ query and run the fixture benchmark. Unit/integration checks cover persistence,
 provenance, caption preference, hierarchy, retrieval and evaluation. Tests and
 lint pass on Python 3.12. No API key is required for offline use.
 
+## Version 0.2
+
+Local browser chat uses an explicitly configured OpenAI endpoint, bounded retrieval
+tools, the last three completed exchanges and claim-level timestamp citations.
+Unsupported questions receive a prominent fixed notice. Partial support, citation
+verification failures and infrastructure failures have distinct states. See the
+[chat specification](CHAT_UI_SPEC.md) and [usage guide](CHAT.md).
+
 ## Non-goals and subsequent work
-No web UI, multi-user service, cloud deployment, knowledge graph or claim extraction.
+No public multi-user service, cloud deployment or knowledge graph.
 Neural chapterization, embedding-based semantic boundary detection, abstractive
 summaries, cross-encoder reranking and a human-authored 20–30-video/50-question
 benchmark are later phases. Do not claim the offline lexical heuristic is neural

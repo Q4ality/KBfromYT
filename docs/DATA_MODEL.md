@@ -22,3 +22,12 @@ SQLite tables: videos (raw input JSON, processed JSON, content hash), documents
 SQLite foreign keys remove documents with a deleted video. FTS deletion/insertion
 is explicit in the same transaction. Embeddings live only in a rebuildable Qdrant
 collection with model/revision metadata in a completion manifest.
+
+Chat-only contracts live in `chat/contracts.py`: a request has a message and
+idempotency ID (plus an optional single-pass comparison flag). The response has
+typed claims, server-resolved citations, support status, deterministic notice,
+unanswered parts, configured model and available usage. Citations include original
+excerpts/quotes, video/chapter metadata, segment IDs, time bounds and generated URLs.
+Source handles are valid only in their current request. In-memory sessions retain
+completed user/validated-answer pairs and a bounded deduplication cache; they are
+not persisted in the transcript database.

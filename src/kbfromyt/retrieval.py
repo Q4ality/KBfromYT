@@ -9,28 +9,47 @@ from kbfromyt.store import Store
 
 
 def search(
-    store: Store, query: str, k: int = 5, semantic: SemanticIndex | None = None
+    store: Store,
+    query: str,
+    k: int = 5,
+    semantic: SemanticIndex | None = None,
+    *,
+    parent_child_limit: int | None = None,
+    video_ids: list[str] | None = None,
 ) -> list[Evidence]:
     if k < 1:
         raise ValueError("k must be positive")
     if not tokens(query):
         return []
     rankings = [
-        store.lexical(query, level, max(20, k * 4)) for level in ("video", "chapter", "chunk")
+        store.lexical(query, level, max(20, k * 4), video_ids)
+        for level in ("video", "chapter", "chunk")
     ]
-    if semantic:
-        rankings.extend(semantic.search(store, query, max(20, k * 4)))
-    videos = store.videos()
     documents = {d.id: d for d in store.documents()}
-    chunks = {c.id: c for p in videos for c in p.chunks}
+    if semantic:
+        allowed = (
+            [d.id for d in documents.values() if d.video_id in video_ids]
+            if video_ids is not None
+            else None
+        )
+        rankings.extend(semantic.search(store, query, max(20, k * 4), document_ids=allowed))
+    videos = store.videos()
+    chunks = {
+        c.id: c for p in videos for c in p.chunks if video_ids is None or c.video_id in video_ids
+    }
     parents = {c.id: c for p in videos for c in p.chapters}
     titles = {p.video.video_id: p.video.title for p in videos}
     scores: dict[str, float] = defaultdict(float)
+    direct_ranks = {}
+    for ranking in rankings:
+        for rank, cid in enumerate(ranking, 1):
+            if cid in chunks:
+                direct_ranks[cid] = min(rank, direct_ranks.get(cid, rank))
     for ranking in rankings:
         credited = set()
         for rank, doc_id in enumerate(ranking, 1):
             doc = documents.get(doc_id)
-            if doc is None:
+            if doc is None or (video_ids is not None and doc.video_id not in video_ids):
                 continue
             candidates = (
                 [chunks[doc_id]]
@@ -42,6 +61,15 @@ def search(
                     and (doc.level == "video" or c.chapter_id == doc.chapter_id)
                 ]
             )
+            if parent_child_limit is not None and doc.level != "chunk":
+                candidates = sorted(
+                    candidates,
+                    key=lambda c: (
+                        direct_ranks.get(c.id, 10000),
+                        -len(tokens(query) & tokens(c.text)),
+                        c.start,
+                    ),
+                )[:parent_child_limit]
             for chunk in candidates:
                 if chunk.id not in credited:
                     scores[chunk.id] += 1 / (60 + rank)

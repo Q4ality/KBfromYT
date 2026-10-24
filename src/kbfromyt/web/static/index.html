@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KBfromYT · Ask your videos</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/chat.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="KBfromYT home"><span class="brand-mark">K<span>↗</span></span>KBfromYT</a>
+    <div class="sidebar-label">YOUR WORKSPACE</div>
+    <div class="nav-current"><span>◌</span> Video chat <span class="live-dot"></span></div>
+    <section class="library"><div class="sidebar-label">CONNECTED LIBRARY</div>
+      <h2>Your video knowledge base</h2><p><span id="video-count">—</span> indexed videos</p>
+      <div class="library-line"></div><p class="muted">Answers grounded in the passages behind them.</p>
+    </section>
+    <div class="sidebar-bottom"><span class="local-dot"></span> Local workspace<span class="privacy-note">Your API key stays on the server.</span></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>Workspace <span class="slash">/</span> <strong>Video chat</strong></span><span class="tag">SOURCE-GROUNDED</span></header>
+    <div class="page">
+      <div class="page-heading"><div><div class="eyebrow">YOUR LIBRARY, IN CONVERSATION</div><h1>Ask your videos.</h1><p>Find an answer. Follow it back to the source.</p></div>
+        <button id="reset" class="secondary" type="button">＋ New chat</button></div>
+      <div id="readiness" class="readiness" role="status">Connecting to your library…</div>
+      <section class="chat-panel" aria-label="Video knowledge base chat">
+        <div id="messages" class="messages" aria-live="polite" aria-relevant="additions">
+          <div id="welcome" class="welcome"><div class="welcome-icon">⌕</div><h2>A conversation with your library</h2><p>Ask about a topic, compare what speakers say,<br>or follow up on a passage. Every supported claim has a source.</p>
+            <div class="suggestions"><button type="button" data-query="Какие документы обсуждаются в связи с Нюрнбергским процессом?">Нюрнбергский процесс и документы <span>↗</span></button><button type="button" data-query="Что говорится о показаниях свидетелей?">Показания свидетелей <span>↗</span></button></div>
+          </div>
+        </div>
+        <form id="composer" class="composer"><label class="sr-only" for="question">Question about your videos</label><textarea id="question" placeholder="Ask a question about your videos…" rows="2" maxlength="8000" required></textarea>
+          <div class="composer-bottom"><span id="memory-label">Remembers the last 3 exchanges</span><button id="send" type="submit">Send <span>↑</span></button></div>
+        </form>
+      </section>
+      <footer><span>Original passages. Clickable timestamps. Clear limits when sources are missing.</span><span id="model-name">OpenAI</span></footer>
+    </div>
+  </main>
+</body>
+</html>

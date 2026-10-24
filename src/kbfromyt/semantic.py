@@ -78,7 +78,12 @@ class SemanticIndex:
         return len(docs)
 
     def search(
-        self, store: Store, query: str, limit: int = 20, threshold: float = 0.45
+        self,
+        store: Store,
+        query: str,
+        limit: int = 20,
+        threshold: float = 0.45,
+        document_ids: list[str] | None = None,
     ) -> list[list[str]]:
         from qdrant_client import models
 
@@ -90,12 +95,18 @@ class SemanticIndex:
         vector = self.embedder.embed([query], query=True)[0]
         lists = []
         for level in ("video", "chapter", "chunk"):
+            conditions = [models.FieldCondition(key="level", match=models.MatchValue(value=level))]
+            if document_ids is not None:
+                if not document_ids:
+                    lists.append([])
+                    continue
+                conditions.append(
+                    models.FieldCondition(key="id", match=models.MatchAny(any=document_ids))
+                )
             points = self.client.query_points(
                 "documents",
                 query=vector,
-                query_filter=models.Filter(
-                    must=[models.FieldCondition(key="level", match=models.MatchValue(value=level))]
-                ),
+                query_filter=models.Filter(must=conditions),
                 limit=limit,
                 score_threshold=threshold,
             ).points

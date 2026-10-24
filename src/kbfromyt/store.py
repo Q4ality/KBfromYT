@@ -125,15 +125,27 @@ class Store:
             for row in self.db.execute("SELECT json FROM documents ORDER BY id")
         ]
 
-    def lexical(self, query: str, level: str, limit: int = 20) -> list[str]:
+    def lexical(
+        self, query: str, level: str, limit: int = 20, video_ids: list[str] | None = None
+    ) -> list[str]:
         terms = sorted(tokens(query))[:64]
         if not terms:
             return []
         literal = " OR ".join('"' + term.replace('"', '""') + '"' for term in terms)
+        clause, params = "", []
+        if video_ids is not None:
+            if not video_ids:
+                return []
+            clause = (
+                " AND id IN (SELECT id FROM documents WHERE video_id IN ("
+                + ",".join("?" for _ in video_ids)
+                + "))"
+            )
+            params = video_ids
         rows = self.db.execute(
             "SELECT id FROM documents_fts WHERE documents_fts MATCH ? "
-            "AND level=? ORDER BY bm25(documents_fts), id LIMIT ?",
-            (literal, level, limit),
+            "AND level=?" + clause + " ORDER BY bm25(documents_fts), id LIMIT ?",
+            (literal, level, *params, limit),
         )
         return [row[0] for row in rows]
 

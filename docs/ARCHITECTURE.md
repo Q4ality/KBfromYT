@@ -27,3 +27,21 @@ all uploads succeed. It never silently serves an incomplete index.
 Local CLI is single-writer. Qdrant local has an exclusive lock; concurrent indexing
 and searching is outside v0.1. Large corpora will need batched/streamed indexing,
 server-mode Qdrant and job scheduling. Transcript text is untrusted input to models.
+
+Version 0.2 adds `web` (FastAPI plus static assets) and `chat` (configuration,
+sessions, provider, bounded tools, agent and validation). One process owns the
+embedding model/Qdrant client for its lifetime and serializes retrieval access.
+SQLite connections are opened in the query worker thread. Stop chat before index
+maintenance. No source schema migration is needed for conversation memory.
+
+Browser requests receive server-issued session cookies. Per-session locks order
+turns and deduplicate completed requests; a TTL and capacity limit bound process
+memory. Each new question sends an explicit three-pair history window. Provider
+response items are retained only inside the current tool loop, with `store=False`.
+
+The OpenAI Responses adapter is separate from CLI Ollama synthesis. A forced search
+registers request-scoped evidence handles. Typed claims must contain exact original
+quotes and valid source bounds; a separate model assessment checks support before
+the server derives status and renders claims. A correction can use the remaining
+request budget. Draft output is never streamed to the UI. Tool and transcript text
+cannot authorize new tools or alter this policy.

@@ -50,6 +50,12 @@ def parser() -> argparse.ArgumentParser:
             item.add_argument("--model", help="optional local Ollama model")
     commands.add_parser("index", help="rebuild local dense index; downloads model on first run")
     commands.add_parser("stats")
+    chat = commands.add_parser("chat", help="start the local RAG browser chat")
+    chat.add_argument("--host", choices=["127.0.0.1", "localhost", "::1"])
+    chat.add_argument("--port", type=positive)
+    chat.add_argument(
+        "--lexical-only", action="store_true", help="explicitly run without a vector index"
+    )
     benchmark = commands.add_parser("evaluate")
     benchmark.add_argument("file", type=Path)
     benchmark.add_argument("--k", type=positive, default=5)
@@ -61,6 +67,25 @@ def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     semantic = None
     try:
+        if args.command == "chat":
+            import os
+
+            import uvicorn
+
+            from kbfromyt.chat.config import ChatConfig
+            from kbfromyt.web.app import create_app
+
+            config = ChatConfig.from_env()
+            if args.lexical_only:
+                config.semantic = False
+            host, port = (
+                args.host or os.getenv("CHAT_HOST", "127.0.0.1"),
+                args.port or int(os.getenv("CHAT_PORT", "8000")),
+            )
+            if host not in {"127.0.0.1", "localhost", "::1"} or not 1 <= port <= 65535:
+                raise ValueError("chat must bind to a loopback address and valid port")
+            uvicorn.run(create_app(config), host=host, port=port, workers=1)
+            return 0
         with Store(args.db) as store:
             if args.command == "index" or getattr(args, "semantic", False):
                 semantic = SemanticIndex(args.index_dir, FastEmbedder(args.embedding_model))

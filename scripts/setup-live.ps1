@@ -10,7 +10,7 @@ try {
         & $Python -m venv $taskVenv
         if ($LASTEXITCODE -ne 0) { throw 'Could not create the live virtual environment' }
     }
-    & $taskPython -m pip install -r requirements/live-windows-py312.txt -e '.[semantic,dev]'
+    & $taskPython -m pip install -r requirements/live-windows-py312.txt -e '.[semantic,chat,dev]'
     if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed' }
     & $taskPython -m pip check
     if ($LASTEXITCODE -ne 0) { throw 'Dependency consistency check failed' }

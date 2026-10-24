@@ -17,8 +17,19 @@
 7. Atomic per-video replacement plus a revision manifest prevents stale vectors
    from masquerading as current search results. A full index rebuild is acceptable
    for the first local version; incremental vector updates come later.
-8. No live video was supplied. Synthetic fixtures verify the full local path; live
-   YouTube reliability and downloaded-model quality are separate integration checks.
+8. Initial synthetic fixtures verified the offline path. The subsequent live playlist
+   imported 20 videos and built a multilingual index; see LIVE_PLAYLIST.md.
+9. Use FastAPI and plain static HTML/CSS/JavaScript for local chat. Reuse the Python
+   retrieval stack without a frontend build or agents framework. Keep chat optional.
+10. Use the configured standard OpenAI Responses endpoint and `gpt-6-luna` with low
+    reasoning. Account access was verified live. No automatic model substitution.
+11. Interpret memory as three completed user/assistant pairs, bounded by input size.
+    Keep it in process memory, with fresh retrieval for every question.
+12. Force initial retrieval and cap the agent at four provider requests. Exact source
+    validation and a separate model check precede display. Keep no-support, partial,
+    verification failure and API failure distinct; never fall back to uncited facts.
+13. Treat automated citation validity and model support judgments as separate from
+    human entailment review. Benchmark results remain preliminary until reviewed.
 
 Requirements from the prior discussion about phase review gates were proposals.
 The current user request authorizes specs, planning and the first implementation
