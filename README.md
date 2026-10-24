@@ -5,6 +5,21 @@ retrieval and a reproducible evaluation harness. Python 3.12+, no service or API
 key needed for the offline baseline. Version 0.4.0 includes browser RAG chat,
 playlist management, cleaned captions, saved conversations and source-linked overviews.
 
+**Installing on another machine?** Follow the [local deployment guide](docs/LOCAL_DEPLOYMENT.md)
+for Windows/Linux/macOS setup, library transfer, backups and readiness checks.
+The full runtime is validated on Windows x64 / Python 3.12; Linux/macOS setup is
+portable but still needs an end-to-end check on those platforms.
+
+```sh
+# Run with your installed 64-bit Python 3.12 (or 3.13).
+python scripts/setup_live.py
+# Edit the created root .env and set OPENAI_API_KEY.
+python scripts/start_chat.py
+```
+
+The UI can import your playlist through **Manage library**. Git does not contain
+the existing playlist data, model downloads or API key.
+
 For the validated 20-video Russian playlist, isolated runtime setup and ready-to-run
 queries, see [the live environment guide](docs/LIVE_PLAYLIST.md).
 

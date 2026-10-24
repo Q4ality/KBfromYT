@@ -38,8 +38,9 @@ Everything below is intentionally excluded from Git:
 - `data/models/fastembed/`: downloaded model cache.
 
 Only scripts, package pins, plans and documentation are versioned. To use another
-machine, rebuild the environment and reingest the playlist; Git does not carry the
-captions or model files.
+machine, follow [LOCAL_DEPLOYMENT.md](LOCAL_DEPLOYMENT.md): rebuild the runtime and
+either import the playlist or transfer the stopped instance's library and caches.
+Git does not carry captions or model files.
 
 Version 0.4 upgrade (2026-10-25): after cue cleaning, the corpus has 1,416 citation
 chunks and 1,835 original video/chapter/chunk documents. Those documents are now
@@ -62,7 +63,9 @@ $env:FASTEMBED_CACHE_PATH = Join-Path (Get-Location) 'data/models/fastembed'
 ```
 
 `setup-live.ps1` installs the validated Windows/Python-3.12 dependency pins from
-`requirements/live-windows-py312.txt` and the editable project with semantic/dev extras.
+`requirements/live-windows-py312.txt` as constraints and the editable project with
+semantic/chat extras. Add `-Dev` for developer tools. The portable Python bootstrap
+also records each resolved environment under `data/environments/<venv-name>/`.
 If running CLI commands in a new shell, set `FASTEMBED_CACHE_PATH` again to reuse
 the same cache.
 

@@ -15,6 +15,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e ".[dev,chat]" "qdrant-client>=1.15,<2"
+      - run: python scripts/setup_live.py --check
       - run: python -m ruff check .
       - run: python -m ruff format --check .
       - run: python -m pytest

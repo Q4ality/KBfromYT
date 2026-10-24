@@ -6,6 +6,10 @@ planning, cited answer generation and a separate support assessment.
 
 ## Start on this device
 
+For a new machine or library transfer, follow [LOCAL_DEPLOYMENT.md](LOCAL_DEPLOYMENT.md).
+The portable bootstrap is `python scripts/setup_live.py`; the portable launcher is
+`python scripts/start_chat.py`. Both Windows wrappers below use those scripts.
+
 Run from the repository root, which contains `pyproject.toml` and `README.md`:
 
 ```powershell
@@ -18,10 +22,10 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/). This device already has the
 playlist, index and configured key. The setup script installs the pinned Windows
-Python 3.12 dependencies into `.venv-live`. Another device must first ingest/index
-the playlist using [LIVE_PLAYLIST.md](LIVE_PLAYLIST.md); data is not stored in Git.
-For other platforms, install `pip install -e '.[semantic,chat,dev]'` and run
-`python -m kbfromyt chat` from the root.
+Python 3.12 runtime dependencies into `.venv-live`. Another device can import the
+playlist in Manage library or transfer a stopped instance's library following the
+deployment guide; data is not stored in Git. Pass `--dev` to the Python setup
+script (or `-Dev` to PowerShell) only when development tools are needed.
 
 Keep `.env` at the **repository root**, beside `.env.example`. Both it and all local
 data are ignored by Git. Existing process environment variables take precedence.
@@ -47,8 +51,9 @@ to the browser. Do not paste it into a question.
 | `CHAT_DEADLINE` | 60 seconds per turn |
 | `CHAT_HOST` / `CHAT_PORT` | `127.0.0.1` / `8000` |
 
-The startup script explicitly uses loopback and port 8000; pass `-Port 8002` to
-change its port. Direct `python -m kbfromyt chat` reads host/port from the environment.
+The startup script explicitly uses loopback and reads `CHAT_PORT` (default 8000);
+pass `--port 8002` (PowerShell wrapper: `-Port 8002`) to change its port.
+Direct `python -m kbfromyt chat` reads host/port from the environment.
 `--lexical-only` explicitly disables semantic search. Chat corpus paths come from
 the settings above; the CLI's global demo `--db` option applies to other commands.
 
