@@ -4,6 +4,9 @@ A local YouTube transcript knowledge base with source timestamps, hierarchical
 retrieval and a reproducible evaluation harness. Python 3.12+, no service or API
 key needed for the offline baseline. Version 0.1.0.
 
+For the validated 20-video Russian playlist, isolated runtime setup and ready-to-run
+queries, see [the live environment guide](docs/LIVE_PLAYLIST.md).
+
 ## Quick start (PowerShell)
 
 ```powershell
