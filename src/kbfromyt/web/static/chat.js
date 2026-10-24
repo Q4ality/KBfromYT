@@ -7,9 +7,10 @@ let currentConversation = null;
 let savedCount = 0;
 let viewTurns = [];
 let libraryPoll = null;
+let overviewCount = 0;
 const welcomeTemplate = $("welcome").cloneNode(true);
 try { currentConversation = localStorage.getItem("kb_current_chat"); } catch {}
-const labels = {grounded:"Cited answer",partial:"Partial source support",no_support:"No supporting citations",verification_failed:"Verification failed",error:"Request failed"};
+const labels = {grounded:"Cited answer",partial:"Partial source support",no_support:"Insufficient retrieved evidence",verification_failed:"Verification failed",error:"Request failed"};
 function element(tag, text, className) {
   const node = document.createElement(tag);
   if (text !== undefined) node.textContent = text;
@@ -81,6 +82,14 @@ function answer(reply) {
   });
   footer.append(copy,element("span",`${labels[reply.status]} · ${(reply.usage.latency_ms/1000).toFixed(1)}s · ${reply.usage.memory_turns} recent exchanges`));
   body.append(footer); scrollChat();
+  if(reply.coverage?.evidence_passages || reply.retrieval?.length) {
+    const trace=element("details",undefined,"search-trace");
+    const c=reply.coverage;
+    trace.append(element("summary",`Retrieved ${c.evidence_passages} passages from ${c.evidence_videos} of ${c.library_videos} videos`));
+    trace.append(element("p","This describes the retrieved excerpts, not a review of every video."));
+    const items=element("ul");for(const step of reply.retrieval||[])items.append(element("li",`${step.tool}: ${step.query||"Neighboring source context"} · ${step.chunk_ids.length} candidates`));
+    trace.append(items);body.append(trace);
+  }
 }
 async function loadStatus() {
   try {
@@ -168,7 +177,12 @@ async function loadLibrary() {
     $("library-summary").textContent=`· ${data.videos.length} videos`;
     $("library-videos").replaceChildren(...data.videos.map(v=>element("li",`${v.title} · ${v.language.toUpperCase()} · ${v.chunks} chunks`)));
     $("playlist-list").replaceChildren();
+    const selectedScope=$("overview-scope").value;$("overview-scope").replaceChildren();
+    const allOption=element("option","Entire library");allOption.value="";$("overview-scope").append(allOption);
     for(const playlist of data.playlists){const p=element("p");const link=element("a",`Playlist · ${playlist.video_ids.length} imported videos ↗`);link.href=playlist.url;link.target="_blank";link.rel="noopener noreferrer";p.append(link);$("playlist-list").append(p);}
+    for(const playlist of data.playlists){const option=element("option",`${playlist.id} · ${playlist.video_ids.length} videos`);option.value=playlist.id;$("overview-scope").append(option);}
+    $("overview-scope").value=selectedScope;
+    if(data.index?.count)$("index-summary").textContent=`${data.index.documents||data.index.count} source documents · ${data.index.count} embedding windows · ${data.index.token_limit||"—"} tokens per window`;
     const progress=$("library-progress");progress.replaceChildren();
     for(const [index,job] of data.jobs.entries()){
       const details=element("details",undefined,`job ${job.status}`);details.open=index===0;
@@ -192,6 +206,26 @@ async function libraryAction(path,body) {
 }
 $("playlist-form").addEventListener("submit",event=>{event.preventDefault();libraryAction("/api/library/import",{url:$("playlist-url").value.trim(),limit:Number($("playlist-limit").value),languages:$("playlist-languages").value.split(",").map(v=>v.trim()).filter(Boolean)});});
 $("rebuild-library").addEventListener("click",()=>libraryAction("/api/library/rebuild"));
+async function loadOverviews(more=false){
+  const container=$("overview-videos");if(!more){container.replaceChildren();overviewCount=0;}
+  try{
+    const scope=$("overview-scope").value;const response=await fetch(`/api/library/overview?offset=${overviewCount}&limit=10${scope?"&playlist="+encodeURIComponent(scope):""}`);if(!response.ok)throw new Error();
+    const data=await response.json();
+    for(const video of data.videos){
+      const card=element("details",undefined,"overview-card");card.append(element("summary",video.title));
+      card.append(element("p",video.topics.join(" · "),"source-meta"));
+      for(const passage of video.passages){
+        const p=element("p");const link=element("a",`${passage.chapter_title} · ${timestamp(passage.start)} ↗`);link.href=passage.url;link.target="_blank";link.rel="noopener noreferrer";
+        p.append(link,element("blockquote",passage.excerpt));card.append(p);
+      }container.append(card);overviewCount++;
+    }
+    $("more-overviews").hidden=!data.has_more;
+    if(!overviewCount)container.append(element("p",data.updating?"Overviews are being prepared…":"No source overviews are available yet. Use Clean and rebuild."));
+  }catch{container.append(element("p","Could not load the source overviews."));}
+}
+$("overview-panel").addEventListener("toggle",()=>{if($("overview-panel").open)loadOverviews();});
+$("overview-scope").addEventListener("change",()=>loadOverviews());
+$("more-overviews").addEventListener("click",()=>loadOverviews(true));
 async function start() {
   await loadConversations();await loadLibrary();
   if(currentConversation)await openConversation(currentConversation);

@@ -2,8 +2,8 @@
 
 A local YouTube transcript knowledge base with source timestamps, hierarchical
 retrieval and a reproducible evaluation harness. Python 3.12+, no service or API
-key needed for the offline baseline. Version 0.3.0 includes browser RAG chat,
-playlist management, cleaned captions and saved conversations.
+key needed for the offline baseline. Version 0.4.0 includes browser RAG chat,
+playlist management, cleaned captions, saved conversations and source-linked overviews.
 
 For the validated 20-video Russian playlist, isolated runtime setup and ready-to-run
 queries, see [the live environment guide](docs/LIVE_PLAYLIST.md).
@@ -25,6 +25,8 @@ Chat questions make billable OpenAI requests. The API key stays on the server.
 Use **Manage library** to import a playlist, choose the video limit/caption languages,
 and monitor progress. **Saved chats** reopens conversations after a reload or restart;
 the model still receives at most three recent completed exchanges.
+Broad questions search multiple facets across videos and show actual excerpt
+coverage. **Video and playlist overviews** links representative original passages.
 
 ## Quick start (PowerShell)
 
@@ -98,9 +100,10 @@ same-chapter neighbor context. Source chapters take priority. Timed chapterizati
 and lexical boundary heuristics are fallbacks; neural semantic chunking, abstractive
 summaries and a cross-encoder reranker are future work. A single long subtitle
 segment is kept intact even if it exceeds the nominal chunk word limit.
-Dense representations are currently full extractive text; embedding models truncate
-long video/chapter documents to their token window. Chunk search preserves the
-independent detail path; pooled or summarized parent vectors are future work.
+Dense representations use overlapping windows sized by the installed embedding
+tokenizer. Window hits aggregate back to original video/chapter/chunk IDs; citations
+retain source chunks and segment times. Video overviews are extractive, source-linked
+navigation across the timeline, without generated factual verdicts.
 Caption segments spanning chapter boundaries belong to the chapter containing
 their start; their full original interval is preserved.
 

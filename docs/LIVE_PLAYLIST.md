@@ -41,6 +41,13 @@ Only scripts, package pins, plans and documentation are versioned. To use anothe
 machine, rebuild the environment and reingest the playlist; Git does not carry the
 captions or model files.
 
+Version 0.4 upgrade (2026-10-25): after cue cleaning, the corpus has 1,416 citation
+chunks and 1,835 original video/chapter/chunk documents. Those documents are now
+covered by 9,533 overlapping embedding windows, checked against the installed
+128-token limit, rather than single truncated vectors. Twenty source-linked
+extractive video overviews are available in the library panel. Raw captions remain
+stored unchanged; earlier counts above describe the initial ingestion.
+
 ## Setup and query (PowerShell, repository root)
 
 ```powershell

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sqlite3
 import time
 from contextlib import nullcontext
@@ -82,11 +83,45 @@ class Library:
             }
             for p in sources
         ]
+        marker = self.service.config.index_dir / "complete.json"
+        try:
+            metadata = json.loads(marker.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            metadata = {}
         return {
+            "index": {
+                key: metadata.get(key)
+                for key in (
+                    "index_version",
+                    "count",
+                    "documents",
+                    "token_limit",
+                    "max_window_tokens",
+                )
+            },
             "videos": videos,
             "playlists": self.history.playlists(),
             "jobs": self.history.jobs(),
             "active_job": self.job if self.active else None,
+        }
+
+    def overview(self, playlist: str | None = None, offset: int = 0, limit: int = 10) -> dict:
+        with Store(self.service.config.db) as store:
+            summaries = store.overviews()
+        if playlist:
+            selected = next((p for p in self.history.playlists() if p["id"] == playlist), None)
+            if selected is None:
+                raise KeyError("Playlist not found")
+            summaries = [s for s in summaries if s.video_id in selected["video_ids"]]
+        page = summaries[offset : offset + limit]
+        return {
+            "method": "extractive",
+            "total_videos": len(summaries),
+            "videos": [s.model_dump() for s in page],
+            "offset": offset,
+            "has_more": offset + len(page) < len(summaries),
+            "updating": self.active,
+            "playlist": playlist,
         }
 
     @property

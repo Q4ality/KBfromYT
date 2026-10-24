@@ -60,3 +60,16 @@ the existing Qdrant client under its corpus lock. Corpus metadata refreshes only
 after successful indexing. Failures retain a repair state, never a ready stale index.
 Restart marks interrupted jobs failed. Processing-version changes automatically
 schedule cleanup from saved raw captions; no OpenAI calls are required.
+
+Version 0.4 separates embedding windows from citation chunks. The embedder's real
+tokenizer creates checked overlapping source substrings for all document resolutions;
+Qdrant groups window matches back to distinct original IDs. A format-version check
+triggers a serialized upgrade even when raw transcript hashes have not changed.
+
+`overviews.py` builds deterministic extractive video summaries from across each
+timeline. Store owns their persistence and versioning. The library API groups these
+source-linked cards by the selected playlist or whole library. Broad retrieval uses
+overviews as routing hints, generic query facets and video diversity, then supplies
+original evidence to the same quote/provenance/support checks. Response traces and
+excerpt coverage make the difference between retrieved support and whole-corpus
+knowledge visible. No external summary generation or agents framework is needed.

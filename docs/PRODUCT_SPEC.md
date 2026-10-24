@@ -55,3 +55,13 @@ semantic chunking or that synthetic fixture metrics measure real-world quality.
 - Persist conversations locally with original citation envelopes and notices.
   New chat preserves older conversations. Reload/restoration keeps model memory
   limited to three accepted pairs. A browser owner cookie scopes history access.
+
+## Version 0.4
+
+- Prevent source truncation by embedding overlapping tokenizer-sized windows across
+  all original documents, keeping citation chunks and timestamps unchanged.
+- Provide source-linked extractive video/playlist overviews across the timeline.
+- Route broad questions through bounded multi-query search with cross-video diversity.
+- Report retrieved excerpt coverage and traces. Abstention scopes its claim to the
+  retrieved passages. Explain speakers' attributed positions while preserving the
+  distinction between source arguments and independently established conclusions.

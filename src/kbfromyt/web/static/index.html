@@ -30,6 +30,12 @@
             <div class="import-options"><label>Video limit<input id="playlist-limit" type="number" value="20" min="1" max="100" required></label><label>Caption languages<input id="playlist-languages" value="ru, en" required maxlength="60"></label><button id="import-playlist" type="submit">Import playlist</button><button id="rebuild-library" type="button" class="secondary">Clean and rebuild</button></div>
           </form>
           <div id="library-progress" role="status"></div><div id="playlist-list"></div>
+          <div id="index-summary" class="source-meta"></div>
+          <details id="overview-panel"><summary>Video and playlist overviews</summary>
+            <p>Representative passages from across each video, linked to their original sources.</p>
+            <label for="overview-scope">Overview scope</label><select id="overview-scope"><option value="">Entire library</option></select>
+            <div id="overview-videos"></div><button id="more-overviews" type="button" class="secondary" hidden>Load more videos</button>
+          </details>
           <details><summary>Indexed videos</summary><ul id="library-videos"></ul></details>
         </div>
       </details>

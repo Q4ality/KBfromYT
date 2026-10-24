@@ -48,3 +48,29 @@ history restoration/deduplication, owner isolation, pagination, partial ingestio
 maintenance coordination, index repair and interrupted jobs. No new paid benchmark
 or live YouTube import was run for this change. The existing corpus was cleaned and
 reindexed locally, and the saved-chat UI was checked using the labeled offline fixture.
+
+## Windowed broad retrieval, version 0.4
+
+The existing corpus now has 9,533 checked embedding windows over its 1,835 original
+documents. The installed tokenizer's limit and the largest indexed window are both
+128 tokens. The 1,416 original citation chunks remain unchanged. Twenty extractive
+video overviews link 120 representative original passages across the timelines.
+
+90 offline tests pass. New regressions cover source text beyond the former embedding
+limit, Unicode window coverage, grouped distinct document IDs, format invalidation,
+overview source provenance, video diversity, repeated-intro deduplication, playlist
+filtering and a local retrieval preview that never invokes OpenAI. The offline README
+walkthrough and Ruff checks also pass.
+
+Two focused real checks exercised `Кто убил польских офицеров в Катыни?`. Manual
+review of the first answer found an insufficiently qualified conditional argument;
+the policy/checker now explicitly account for sarcasm, hypothetical reasoning and
+compound assertions. The final check returned an attributed, cited position with
+status `partial`, preserving the distinction from an independent historical verdict.
+It retrieved 5 passages from 4 of 20 videos, used 4 provider requests with 9,955 input
+and 912 output tokens, and took 20.36 seconds. Its returned quote is a literal original
+substring. This is a targeted regression check, not a general accuracy measurement.
+
+Local query probes, final answer/trace, index metadata and screenshots are retained
+under ignored `data/live/`. No full paid benchmark was repeated. Human entailment and
+relevance review remains necessary; a valid quotation alone does not prove support.

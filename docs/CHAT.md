@@ -1,6 +1,6 @@
 # Local RAG chat
 
-Version 0.3 serves a plain browser UI from FastAPI. The existing 20-video playlist
+Version 0.4 serves a plain browser UI from FastAPI. The existing 20-video playlist
 and multilingual index stay local. The configured OpenAI model handles query
 planning, cited answer generation and a separate support assessment.
 
@@ -116,6 +116,31 @@ database with conversations; transcript content remains in the source database.
 No-support and partial-support notices appear inside the answer and survive Copy
 answer. Citation-validation failures suppress the draft. API/index failures have a
 separate error state and are not presented as missing source evidence.
+
+Broad questions such as `Кто убил польских офицеров в Катыни?` retrieve multiple
+query facets and passages from several videos. The answer should explain the authors'
+attributed positions with exact source quotes, distinguishing narrators from quoted
+opponents. It does not establish a historical verdict independently of this library.
+Expandable search details show the actual queries and excerpt coverage. A no-support
+notice refers to these retrieved passages and acknowledges that other relevant
+material may exist. Older saved answers preserve their original notices.
+
+Under Manage library, open **Video and playlist overviews**. Select the whole library
+or an imported playlist. Each extractive overview includes chapter topics and original
+passages selected across the video's timeline, with source links. These are navigation
+summaries; they are not generated factual conclusions or exhaustive argument maps.
+
+The dense index now stores overlapping windows that fit the actual embedding
+tokenizer, rather than truncating whole source chunks/chapters/videos. For the current
+MiniLM that limit is 128 tokens including special tokens. The panel shows original
+document count, embedding window count and limit. Window hits resolve to original
+chunks for citation/context. Updating the index format automatically schedules a
+local rebuild on restart, with no source downloads or paid generation.
+
+For local diagnostics, `POST /api/library/search?broad=true` accepts the same search
+body (`query`, `video_ids_or_null`, `k` between 1 and 8) and returns raw source results
+and query facets without invoking OpenAI. It uses the resident index and maintenance
+lock, so a separate diagnostic process does not contend for Qdrant's file lock.
 
 ## Limits and operation
 

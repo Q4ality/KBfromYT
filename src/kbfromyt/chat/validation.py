@@ -15,16 +15,17 @@ from kbfromyt.chat.tools import EvidenceRegistry
 NOTICES = {
     "en": {
         "no_support": (
-            "No supporting citations were found in the indexed videos. "
-            "I cannot provide a source-grounded answer."
+            "The retrieved passages did not provide sufficient supporting citations. "
+            "I cannot give a source-grounded answer from these results. "
+            "Relevant evidence may exist elsewhere in the library."
         ),
         "partial": "Only part of this question is supported by the indexed videos.",
         "verification_failed": "The answer could not be verified against the retrieved sources.",
     },
     "ru": {
         "no_support": (
-            "В проиндексированных видео не найдено подтверждающих цитат. "
-            "Я не могу дать ответ с опорой на источники."
+            "В найденных фрагментах недостаточно подтверждающих цитат для ответа. "
+            "Это не означает, что нужных сведений нет в других частях библиотеки."
         ),
         "partial": "Только часть вопроса подтверждается источниками из проиндексированных видео.",
         "verification_failed": "Не удалось проверить ответ по найденным источникам.",

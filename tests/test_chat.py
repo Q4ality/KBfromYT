@@ -136,7 +136,8 @@ def test_agent_states_and_citation_enforcement(chat_setup, mode, status):
         assert not reply.claims and not reply.citations
         assert reply.notice
     if status == "no_support":
-        assert "No supporting citations" in reply.display_text()
+        assert "retrieved passages" in reply.display_text()
+        assert "Relevant evidence may exist elsewhere" in reply.display_text()
 
 
 def test_refinement_limit_and_deadline(chat_setup):

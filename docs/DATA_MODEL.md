@@ -44,3 +44,14 @@ Caption cleaning preserves `VideoInput` raw segments unchanged. Derived `Segment
 text excludes recognized audio cues; cue-only segments are omitted while surviving
 segment IDs retain their original raw positions. Chunks are rebuilt from cleaned
 segments; the processing-version hash invalidates previous vector manifests.
+
+Version 0.4 adds a source-database `overviews` table keyed by video ID and overview
+version. Each extractive card stores chapter topics and source-linked passages with
+original chunk IDs, excerpts, raw segment IDs, time bounds and URLs. Deleting/replacing
+a source cascades its overview; missing/old overview versions refresh during indexing.
+
+Qdrant points now represent token windows rather than entire documents. Payloads map
+each window back to its original document ID/level, with exact start/end character
+offsets and token count. Grouped hits still return original IDs to existing retrieval.
+Chat envelopes add retrieval steps and coverage with defaults, so old saved responses
+remain readable. Traces contain queries and IDs, without hidden reasoning or keys.

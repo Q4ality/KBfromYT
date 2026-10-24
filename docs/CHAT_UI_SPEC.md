@@ -1,4 +1,4 @@
-# Local RAG chat — versions 0.2–0.3
+# Local RAG chat — versions 0.2–0.4
 
 Status: implemented and tested against the live playlist and standard OpenAI.
 Requested 2026-10-24. Human benchmark relevance/entailment review remains pending.
@@ -55,7 +55,7 @@ conversation, current question and tool metadata are sent to the configured
 endpoint. A custom endpoint may have its own retention behavior; `store=False`
 must not be described as a general no-retention guarantee.
 
-The agent can call two read-only application tools: transcript search and bounded
+The agent can call read-only transcript search, broad overview search and bounded
 context expansion. It cannot browse the web, run shell commands, ingest videos or
 change data. Mandatory fresh retrieval precedes each factual answer; allow one
 query refinement if needed. The server, rather than the model, enforces limits.
@@ -66,12 +66,12 @@ query refinement if needed. The server, rather than the model, enforces limits.
 | --- | --- |
 | `grounded` | Render only source-supported claims, with valid claim-level citations. |
 | `partial` | Show **“Only part of this question is supported by the indexed videos.”** Answer supported parts and list unanswered parts. |
-| `no_support` | Show **“No supporting citations were found in the indexed videos. I cannot provide a source-grounded answer.”** Do not invent an answer from model memory. |
+| `no_support` | Show **“The retrieved passages did not provide sufficient supporting citations. I cannot give a source-grounded answer from these results. Relevant evidence may exist elsewhere in the library.”** Do not invent an answer from model memory. |
 | `verification_failed` | Show **“The answer could not be verified against the retrieved sources.”** Suppress the draft factual answer. |
 | `error` | Describe an API, index or retrieval failure; do not claim the knowledge base contains no evidence. |
 
 For Russian no-support answers the fixed wording is:
-**«В проиндексированных видео не найдено подтверждающих цитат. Я не могу дать ответ с опорой на источники.»**
+**«В найденных фрагментах недостаточно подтверждающих цитат для ответа. Это не означает, что нужных сведений нет в других частях библиотеки.»**
 The server sets the status and notice after validation; the model cannot remove
 them. The notice appears prominently in the answer bubble and remains present
 when an answer is copied. A color alone or a warning hidden in source details is
@@ -80,6 +80,11 @@ insufficient. Partial answers must not contain unsupported factual claims.
 A retrieved passage or a valid citation ID alone does not prove support. Validate
 IDs, original excerpts, source bounds and current retrieval provenance in code;
 assess claim/passage entailment separately. Human evaluation remains necessary.
+
+Version 0.4 reports actual retrieved-passage/video coverage with expandable search
+traces. Broad questions may summarize the authors' supported, attributed positions
+without demanding an independent verdict about the underlying event. Topic/overview
+metadata stays separate from original passages used for claim citations.
 
 ## Completion criteria
 

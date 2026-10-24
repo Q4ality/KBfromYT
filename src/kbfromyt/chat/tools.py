@@ -5,11 +5,12 @@ import threading
 from dataclasses import dataclass
 
 from kbfromyt.chat.config import ChatConfig
-from kbfromyt.chat.contracts import ContextArgs, SearchArgs
+from kbfromyt.chat.contracts import ContextArgs, RetrievalStep, SearchArgs
 from kbfromyt.chat.memory import budget_size
 from kbfromyt.models import Evidence, ProcessedVideo
-from kbfromyt.retrieval import search
-from kbfromyt.semantic import FastEmbedder, SemanticIndex
+from kbfromyt.overviews import content_terms
+from kbfromyt.retrieval import broad_search, search
+from kbfromyt.semantic import INDEX_VERSION, FastEmbedder, SemanticIndex
 from kbfromyt.store import Store
 
 
@@ -28,6 +29,13 @@ def tool_schemas() -> list[dict]:
                 "Search indexed video transcripts for fresh evidence. "
                 "Use a standalone query, in Russian for the current corpus where appropriate. "
                 "Use video_ids_or_null to focus a follow-up on a previously cited video.",
+                SearchArgs,
+            ),
+            (
+                "search_overviews",
+                "Search broad questions about authors' positions, competing versions or a series. "
+                "Uses source-linked video overviews, multiple query facets and diverse videos. "
+                "Returned transcript passages are evidence; overview metadata is navigation only.",
                 SearchArgs,
             ),
             (
@@ -73,6 +81,8 @@ class Corpus:
             if not marker.is_file():
                 raise ValueError("Semantic index is missing. Stop chat and build the index.")
             metadata = json.loads(marker.read_text(encoding="utf-8"))
+            if metadata.get("index_version") != INDEX_VERSION:
+                raise ValueError("Semantic index format changed. Use Clean and rebuild.")
             if metadata["snapshot"] != self.snapshot or metadata["model"] != config.embedding_model:
                 raise ValueError("Semantic index is stale or model differs. Stop chat and reindex.")
             self.semantic = SemanticIndex(config.index_dir, FastEmbedder(config.embedding_model))
@@ -83,18 +93,28 @@ class Corpus:
 
     def rebuild(self) -> int:
         with self.lock, Store(self.config.db) as store:
+            store.refresh_overviews()
             count = self.semantic.rebuild(store) if self.semantic else 0
             self.videos = {p.video.video_id: p for p in store.videos()}
             self.snapshot = store.snapshot_hash()
             return count
 
-    def search(self, args: SearchArgs) -> list[Source]:
+    def search(
+        self, args: SearchArgs, broad: bool = False, trace: list[dict] | None = None
+    ) -> list[Source]:
         if args.video_ids_or_null is not None and any(
             vid not in self.videos for vid in args.video_ids_or_null
         ):
             raise ValueError("unknown source video filter")
         with self.lock, Store(self.config.db) as store:
             self.current(store)
+            if broad:
+                hits, steps = broad_search(
+                    store, args.query, args.k, self.semantic, args.video_ids_or_null
+                )
+                if trace is not None:
+                    trace.extend(steps)
+                return [self.source(e) for e in hits]
             hits = search(
                 store,
                 args.query,
@@ -104,6 +124,35 @@ class Corpus:
                 video_ids=args.video_ids_or_null,
             )
             return [self.source(e) for e in hits]
+
+    def catalogue(self, query: str, video_ids: list[str] | None = None) -> list[dict]:
+        with self.lock, Store(self.config.db) as store:
+            self.current(store)
+            summaries = [
+                s for s in store.overviews() if video_ids is None or s.video_id in video_ids
+            ]
+        terms = content_terms(query)
+        summaries.sort(
+            key=lambda s: (
+                -len(
+                    terms
+                    & content_terms(
+                        " ".join([s.title, *s.topics, *(p.excerpt for p in s.passages)])
+                    )
+                ),
+                s.video_id,
+            )
+        )
+        return [
+            {
+                "video_id": s.video_id,
+                "title": s.title,
+                "topics": s.topics[:8],
+                "method": s.method,
+                "source_chunk_ids": [p.chunk_id for p in s.passages],
+            }
+            for s in summaries[:8]
+        ]
 
     def source(self, evidence: Evidence) -> Source:
         video = self.videos[evidence.video_id].video
@@ -134,12 +183,14 @@ class Corpus:
 
 
 class EvidenceRegistry:
-    def __init__(self, config: ChatConfig, corpus: Corpus):
+    def __init__(self, config: ChatConfig, corpus: Corpus, broad: bool = False):
         self.config, self.corpus = config, corpus
         self.sources: dict[str, Source] = {}
         self.used_bytes = 0
         self.omitted = 0
         self.searches = self.expansions = self.executions = 0
+        self.broad = broad
+        self.trace: list[RetrievalStep] = []
 
     def register(self, sources: list[Source]) -> list[dict]:
         output = []
@@ -180,12 +231,53 @@ class EvidenceRegistry:
         if self.executions >= self.config.max_tool_calls:
             raise ToolBudget("tool budget exhausted")
         self.executions += 1
-        if name == "search_transcripts":
+        if name in {"search_transcripts", "search_overviews"}:
             if self.searches >= 2:
                 raise ToolBudget("search budget exhausted")
             self.searches += 1
             args = SearchArgs.model_validate_json(arguments)
-            return {"sources": self.register(self.corpus.search(args))}
+            broad = self.broad or name == "search_overviews"
+            catalogue, steps = [], []
+            if broad:
+                for card in self.corpus.catalogue(args.query, args.video_ids_or_null):
+                    size = budget_size(card)
+                    if (
+                        budget_size(catalogue) + size > 1200
+                        or self.used_bytes + size > self.config.evidence_budget
+                    ):
+                        break
+                    catalogue.append(card)
+                    self.used_bytes += size
+            sources = self.corpus.search(args, broad=broad, trace=steps)
+            returned = self.register(sources)
+            for step in steps or [
+                {"query": args.query, "chunk_ids": [s.evidence.id for s in sources]}
+            ]:
+                self.trace.append(
+                    RetrievalStep(
+                        tool=name,
+                        query=step["query"],
+                        chunk_ids=step["chunk_ids"],
+                        returned_chunk_ids=[
+                            self.sources[item["source_id"]].evidence.id for item in returned
+                        ],
+                        returned_video_ids=list(
+                            dict.fromkeys(
+                                self.sources[item["source_id"]].evidence.video_id
+                                for item in returned
+                            )
+                        ),
+                    )
+                )
+            return {
+                "sources": returned,
+                "video_overviews": catalogue,
+                "coverage": {
+                    "library_videos": len(self.corpus.videos),
+                    "evidence_videos": len({s.evidence.video_id for s in self.sources.values()}),
+                    "navigation_only": True,
+                },
+            }
         if name == "get_context":
             if self.expansions >= 1:
                 raise ToolBudget("context expansion budget exhausted")
@@ -193,9 +285,21 @@ class EvidenceRegistry:
             args = ContextArgs.model_validate_json(arguments)
             if args.source_handle not in self.sources:
                 raise ValueError("unknown or stale source handle")
-            return {
-                "sources": self.register(
-                    self.corpus.context(self.sources[args.source_handle], args.neighbor_count)
+            sources = self.corpus.context(self.sources[args.source_handle], args.neighbor_count)
+            result = self.register(sources)
+            self.trace.append(
+                RetrievalStep(
+                    tool=name,
+                    chunk_ids=[s.evidence.id for s in sources],
+                    returned_chunk_ids=[
+                        self.sources[item["source_id"]].evidence.id for item in result
+                    ],
+                    returned_video_ids=list(
+                        dict.fromkeys(
+                            self.sources[item["source_id"]].evidence.video_id for item in result
+                        )
+                    ),
                 )
-            }
+            )
+            return {"sources": result}
         raise ValueError("unknown tool")

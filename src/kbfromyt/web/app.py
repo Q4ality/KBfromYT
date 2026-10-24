@@ -1,23 +1,25 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import secrets
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from kbfromyt.chat.config import ChatConfig
-from kbfromyt.chat.contracts import ChatRequest
+from kbfromyt.chat.contracts import ChatRequest, SearchArgs
 from kbfromyt.chat.history import History
 from kbfromyt.chat.memory import configure_tokenizer
 from kbfromyt.chat.providers.openai import OpenAIProvider
 from kbfromyt.chat.service import ChatService
 from kbfromyt.chat.tools import Corpus
+from kbfromyt.semantic import INDEX_VERSION
 from kbfromyt.store import Store
 from kbfromyt.web.library import Library, PlaylistRequest
 
@@ -50,7 +52,16 @@ def create_app(config: ChatConfig | None = None, service: ChatService | None = N
         )
         if not service and app.state.library and config.db.is_file():
             with Store(config.db) as store:
-                needs_cleanup = store.needs_reprocessing()
+                needs_cleanup = store.needs_reprocessing() or store.needs_overviews()
+            if config.semantic:
+                marker = config.index_dir / "complete.json"
+                try:
+                    needs_cleanup |= (
+                        json.loads(marker.read_text(encoding="utf-8")).get("index_version")
+                        != INDEX_VERSION
+                    )
+                except (OSError, ValueError):
+                    needs_cleanup = True
             if needs_cleanup:
                 app.state.library.start()
         try:
@@ -138,6 +149,41 @@ def create_app(config: ChatConfig | None = None, service: ChatService | None = N
     @app.post("/api/library/import", status_code=202)
     async def import_playlist(body: PlaylistRequest, request: Request):
         return start_library(request, body)
+
+    @app.post("/api/library/search")
+    async def preview_retrieval(body: SearchArgs, request: Request, broad: bool = False):
+        service = request.app.state.chat
+        if service.maintenance:
+            raise HTTPException(503, "Library maintenance is in progress.")
+        async with service.operation_lock:
+            if service.maintenance or not service.corpus:
+                raise HTTPException(503, "The source index is not ready.")
+            steps = []
+            try:
+                sources = await asyncio.to_thread(service.corpus.search, body, broad, steps)
+            except ValueError as exc:
+                raise HTTPException(400, "Invalid source filter or stale index.") from exc
+            return {
+                "mode": "overview" if broad else "detail",
+                "queries": steps,
+                "library_videos": len(service.corpus.videos),
+                "sources": [source.evidence.model_dump() for source in sources],
+            }
+
+    @app.get("/api/library/overview")
+    async def library_overview(
+        request: Request,
+        playlist: str | None = None,
+        offset: int = Query(0, ge=0, le=100000),
+        limit: int = Query(10, ge=1, le=50),
+    ):
+        library = request.app.state.library
+        if not library:
+            return {"method": "extractive", "total_videos": 0, "videos": [], "has_more": False}
+        try:
+            return await asyncio.to_thread(library.overview, playlist, offset, limit)
+        except KeyError as exc:
+            raise HTTPException(404, "Playlist not found.") from exc
 
     @app.post("/api/library/rebuild", status_code=202)
     async def rebuild_library(request: Request):

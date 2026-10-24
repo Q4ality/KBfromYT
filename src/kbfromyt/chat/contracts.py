@@ -74,7 +74,25 @@ class Usage(Contract):
     memory_turns: int = 0
 
 
+class RetrievalStep(Contract):
+    tool: str
+    query: str = ""
+    chunk_ids: list[str] = Field(default_factory=list)
+    returned_chunk_ids: list[str] = Field(default_factory=list)
+    returned_video_ids: list[str] = Field(default_factory=list)
+
+
+class Coverage(Contract):
+    mode: str = "detail"
+    library_videos: int = 0
+    evidence_videos: int = 0
+    evidence_passages: int = 0
+    omitted_passages: int = 0
+
+
 class AnswerEnvelope(Contract):
+    retrieval: list[RetrievalStep] = Field(default_factory=list)
+    coverage: Coverage = Field(default_factory=Coverage)
     conversation_id: str | None = None
     reply_id: str = Field(default_factory=lambda: uuid4().hex)
     status: Status

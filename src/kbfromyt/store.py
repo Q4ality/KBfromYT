@@ -6,6 +6,7 @@ import sqlite3
 from pathlib import Path
 
 from kbfromyt.models import Document, ProcessedVideo, VideoInput
+from kbfromyt.overviews import OVERVIEW_VERSION, VideoOverview, build_overview
 from kbfromyt.processing import PROCESSING_VERSION, process, tokens
 
 
@@ -25,6 +26,9 @@ class Store:
             CREATE TABLE IF NOT EXISTS documents(
                 id TEXT PRIMARY KEY, video_id TEXT REFERENCES videos(id) ON DELETE CASCADE,
                 level TEXT NOT NULL, body TEXT NOT NULL, json TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS overviews(
+                video_id TEXT PRIMARY KEY REFERENCES videos(id) ON DELETE CASCADE,
+                version TEXT NOT NULL, body TEXT NOT NULL);
             CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
                 id UNINDEXED, level UNINDEXED, body, tokenize='unicode61');
         """)
@@ -69,9 +73,41 @@ class Store:
                     "INSERT INTO documents_fts VALUES(?,?,?)", (doc.id, doc.level, doc.text)
                 )
             self.db.execute(
+                "INSERT INTO overviews VALUES(?,?,?)",
+                (video.video_id, OVERVIEW_VERSION, build_overview(processed).model_dump_json()),
+            )
+            self.db.execute(
                 "UPDATE settings SET value=CAST(value AS INTEGER)+1 WHERE key='revision'"
             )
         return True
+
+    def needs_overviews(self) -> bool:
+        return bool(
+            self.db.execute(
+                "SELECT 1 FROM videos v LEFT JOIN overviews o ON o.video_id=v.id "
+                "WHERE o.video_id IS NULL OR o.version!=? LIMIT 1",
+                (OVERVIEW_VERSION,),
+            ).fetchone()
+        )
+
+    def refresh_overviews(self) -> None:
+        if self.needs_overviews():
+            with self.db:
+                for video in self.videos():
+                    self.db.execute(
+                        "INSERT OR REPLACE INTO overviews VALUES(?,?,?)",
+                        (
+                            video.video.video_id,
+                            OVERVIEW_VERSION,
+                            build_overview(video).model_dump_json(),
+                        ),
+                    )
+
+    def overviews(self) -> list[VideoOverview]:
+        return [
+            VideoOverview.model_validate_json(row[0])
+            for row in self.db.execute("SELECT body FROM overviews ORDER BY video_id")
+        ]
 
     def needs_reprocessing(self) -> bool:
         return any(

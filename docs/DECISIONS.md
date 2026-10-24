@@ -39,6 +39,19 @@
 16. Coordinate UI ingestion with chat through a shared operation lock and corpus
     lock. Reuse the resident embedding/index client for rebuilds. Durable job status
     exposes partial and interrupted imports; index failures require explicit repair.
+17. Embedding context limits must be enforced before indexing. Index all overlapping
+    source windows and group matches by original document; never silently embed only
+    the opening of a video/chapter/chunk. Version the index representation separately.
+18. Begin with deterministic extractive overviews linked to raw evidence. Select
+    representative passages across the video rather than introducing paid generated
+    summaries or unverified argument labels. Broad questions use generic facets and
+    source diversity, with explicit limits and measured coverage.
+19. Treat attributed source claims as claims about a speaker's position. Preserve
+    independent support checking without demanding an external historical verdict
+    before reporting that position. Abstention is scoped to retrieved excerpts.
+20. Cross-video diversity must include content diversity. Search overview anchors
+    independently and collapse repeated openings, so identical introductions do not
+    occupy the evidence budget merely because they occur in different videos.
 
 Requirements from the prior discussion about phase review gates were proposals.
 The current user request authorizes specs, planning and the first implementation
