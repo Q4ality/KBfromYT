@@ -44,3 +44,14 @@ can't create repositories., Trade controls restricted creator can't create
 repositories.” No remote repository was created and no push is possible to that
 nonexistent destination. This is a GitHub account restriction, not a local test
 failure. Resolve the restriction with GitHub before retrying the remote delivery.
+
+### Existing SSH setup verified
+The chat “Clone repo and configure SSH” identifies a repository-local SSH setup
+under `C:/Users/q4ali/Documents/Codex/2026-07-23/l/work/ssh/`.
+The standard user-profile `.ssh` directory is not used. The existing Ed25519 key
+authenticates successfully to GitHub as Q4ality, and SSH `ls-remote` succeeds for
+Q4ality/draft_room_intelligence. SSH `ls-remote` for Q4ality/KBfromYT returns
+“Repository not found.” No private key content was displayed or copied.
+This checkout now reuses that key and existing known_hosts with strict host checking
+and has the intended SSH origin configured. Authentication is verified; remote
+repository creation remains the outstanding blocker.
