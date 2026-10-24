@@ -15,6 +15,7 @@ class ChatConfig(BaseModel):
     model: str = Field(default="gpt-6-luna", min_length=1)
     reasoning_effort: Literal["none", "low", "medium", "high"] = "low"
     db: Path = Path("data/live/kb.sqlite3")
+    state_db: Path = Path("data/live/app.sqlite3")
     index_dir: Path = Path("data/live/semantic")
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     semantic: bool = True
@@ -53,6 +54,7 @@ class ChatConfig(BaseModel):
             "model": "OPENAI_MODEL",
             "reasoning_effort": "OPENAI_REASONING_EFFORT",
             "db": "KB_DB",
+            "state_db": "CHAT_STATE_DB",
             "index_dir": "KB_INDEX_DIR",
             "embedding_model": "KB_EMBEDDING_MODEL",
             "memory_turns": "CHAT_MEMORY_TURNS",

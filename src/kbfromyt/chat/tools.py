@@ -81,6 +81,13 @@ class Corpus:
         if store.snapshot_hash() != self.snapshot:
             raise ValueError("Source database changed. Stop chat, reindex and restart.")
 
+    def rebuild(self) -> int:
+        with self.lock, Store(self.config.db) as store:
+            count = self.semantic.rebuild(store) if self.semantic else 0
+            self.videos = {p.video.video_id: p for p in store.videos()}
+            self.snapshot = store.snapshot_hash()
+            return count
+
     def search(self, args: SearchArgs) -> list[Source]:
         if args.video_ids_or_null is not None and any(
             vid not in self.videos for vid in args.video_ids_or_null

@@ -38,6 +38,7 @@ def budget_size(value: object) -> int:
 
 @dataclass
 class Session:
+    conversation_id: str | None = None
     turns: list[tuple[str, AnswerEnvelope]] = field(default_factory=list)
     completed: dict[str, tuple[str, AnswerEnvelope]] = field(default_factory=dict)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
@@ -104,4 +105,5 @@ class Sessions:
             async with session.lock:
                 session.turns.clear()
                 session.completed.clear()
+                session.conversation_id = None
                 session.touched = time.monotonic()

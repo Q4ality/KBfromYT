@@ -10,6 +10,7 @@ import uvicorn
 
 from kbfromyt.chat.config import ChatConfig
 from kbfromyt.chat.contracts import SupportCheck
+from kbfromyt.chat.history import History
 from kbfromyt.chat.service import ChatService
 from kbfromyt.chat.tools import Corpus
 from kbfromyt.models import VideoInput
@@ -50,7 +51,15 @@ if __name__ == "__main__":
         store.import_video(VideoInput.model_validate_json(Path("examples/demo.json").read_text()))
     config = ChatConfig(db=db, semantic=False)
     uvicorn.run(
-        create_app(config, BrowserService(config, BrowserProvider(), Corpus(config))),
+        create_app(
+            config,
+            BrowserService(
+                config,
+                BrowserProvider(),
+                Corpus(config),
+                history=History(Path("data/live/browser-fixture-state.sqlite3")),
+            ),
+        ),
         host="127.0.0.1",
         port=8001,
     )

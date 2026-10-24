@@ -11,6 +11,7 @@ Status = Literal["grounded", "partial", "no_support", "verification_failed", "er
 
 
 class ChatRequest(Contract):
+    conversation_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
     message: str = Field(min_length=1, max_length=8000)
     request_id: str = Field(pattern=r"^[A-Za-z0-9_-]{8,80}$")
     agentic: bool = True
@@ -74,6 +75,7 @@ class Usage(Contract):
 
 
 class AnswerEnvelope(Contract):
+    conversation_id: str | None = None
     reply_id: str = Field(default_factory=lambda: uuid4().hex)
     status: Status
     claims: list[AnswerClaim] = Field(default_factory=list)

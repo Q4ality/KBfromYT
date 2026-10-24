@@ -6,7 +6,46 @@ import re
 
 from kbfromyt.models import Chapter, Chunk, ProcessedVideo, Segment, SourceChapter, VideoInput
 
-PROCESSING_VERSION = "lexical-boundaries-v1"
+PROCESSING_VERSION = "lexical-boundaries-v2-clean-cues"
+
+# Only recognized non-speech annotations; arbitrary bracketed speech stays intact.
+CAPTION_CUES = frozenset(
+    {
+        "music",
+        "background music",
+        "music playing",
+        "music fades",
+        "instrumental music",
+        "applause",
+        "clapping",
+        "laughter",
+        "laughing",
+        "silence",
+        "inaudible",
+        "noise",
+        "cheering",
+        "музыка",
+        "звучит музыка",
+        "аплодисменты",
+        "смех",
+        "тишина",
+        "неразборчиво",
+        "шум",
+        "смеётся",
+        "смеются",
+    }
+)
+
+
+def clean_caption(text: str) -> str:
+    text = re.sub(r"<[^>]+>", "", html.unescape(text))
+
+    def strip_cue(match: re.Match) -> str:
+        cue = " ".join(match.group()[1:-1].casefold().split()).strip(" ♪♫")
+        return " " if cue in CAPTION_CUES else match.group()
+
+    text = re.sub(r"\[[^\[\]\n]{1,80}\]|\([^()\n]{1,80}\)", strip_cue, text)
+    return " ".join(text.replace("♪", " ").replace("♫", " ").split())
 
 
 def tokens(text: str) -> set[str]:
@@ -18,7 +57,7 @@ def process(video: VideoInput, max_words: int = 280, chapter_seconds: int = 300)
         raise ValueError("max_words must be >=10 and chapter_seconds >=1")
     segments = []
     for i, raw in enumerate(video.segments):
-        text = " ".join(html.unescape(re.sub(r"<[^>]+>", "", raw.text)).split())
+        text = clean_caption(raw.text)
         if text:
             segments.append(
                 Segment(

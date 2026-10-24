@@ -1,4 +1,4 @@
-# Local RAG chat — version 0.2
+# Local RAG chat — versions 0.2–0.3
 
 Status: implemented and tested against the live playlist and standard OpenAI.
 Requested 2026-10-24. Human benchmark relevance/entailment review remains pending.
@@ -25,11 +25,16 @@ pipeline is needed for this milestone. The browser must never receive API keys.
 Interpret “three last messages from user/solution” as the **last three complete
 user/assistant exchanges**: up to six historical messages, plus the new question.
 Make the exchange count configurable, default three. Retain these pairs in server
-memory per session; a restart or New chat clears them. Failed/cancelled requests
+memory per session, restoring them from saved history when needed. Failed/cancelled requests
 do not create completed pairs. Completed no-support responses do count as pairs.
 The page can show its whole current conversation while the model sees only the
 rolling memory window. Older messages remain visible but are excluded from the
-next request. Reload persistence and cross-device history are out of scope.
+next request. Saved conversations survive reload/restart; cross-device history is out of scope.
+
+Version 0.3 saves conversation transcripts locally and reopens them from Saved chats.
+Transient memory expires, but
+only the last three accepted pairs are restored for model input. New chat preserves
+earlier saved conversations. See [CHAT.md](CHAT.md) for storage and browser scope.
 
 History resolves references such as “what did he say next?”; it is not source
 evidence. Factual answers must retrieve current source passages again. Never turn

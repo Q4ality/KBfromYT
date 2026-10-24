@@ -29,5 +29,18 @@ typed claims, server-resolved citations, support status, deterministic notice,
 unanswered parts, configured model and available usage. Citations include original
 excerpts/quotes, video/chapter metadata, segment IDs, time bounds and generated URLs.
 Source handles are valid only in their current request. In-memory sessions retain
-completed user/validated-answer pairs and a bounded deduplication cache; they are
-not persisted in the transcript database.
+the bounded model window; durable state is separate from the transcript database.
+
+Version 0.3's `app.sqlite3` stores conversations (ID, hashed browser owner, title,
+timestamps), turns (ordered question, complete answer envelope, status, request ID
+and fingerprint), library jobs (durable progress/results) and playlist selections.
+Conversation ID plus request ID is unique. Read access requires the matching browser
+owner; restoring memory selects only the last configured accepted pairs. Failed
+answers can appear in saved history but are excluded from model memory. Cancelled
+requests are not committed as completed turns. Provider credentials are not stored
+in this database.
+
+Caption cleaning preserves `VideoInput` raw segments unchanged. Derived `Segment`
+text excludes recognized audio cues; cue-only segments are omitted while surviving
+segment IDs retain their original raw positions. Chunks are rebuilt from cleaned
+segments; the processing-version hash invalidates previous vector manifests.

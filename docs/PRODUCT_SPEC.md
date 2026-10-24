@@ -45,3 +45,13 @@ Neural chapterization, embedding-based semantic boundary detection, abstractive
 summaries, cross-encoder reranking and a human-authored 20–30-video/50-question
 benchmark are later phases. Do not claim the offline lexical heuristic is neural
 semantic chunking or that synthetic fixture metrics measure real-world quality.
+
+## Version 0.3
+
+- Remove known non-speech cues from derived captions/chunks; preserve raw inputs,
+  stable surviving segment IDs and timestamps. Reprocess/version/reindex existing data.
+- Browser playlist imports have explicit limits/languages, background progress,
+  per-video failures and serialized index updates; users can trigger clean/rebuild.
+- Persist conversations locally with original citation envelopes and notices.
+  New chat preserves older conversations. Reload/restoration keeps model memory
+  limited to three accepted pairs. A browser owner cookie scopes history access.

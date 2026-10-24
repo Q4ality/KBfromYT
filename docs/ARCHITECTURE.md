@@ -31,8 +31,8 @@ server-mode Qdrant and job scheduling. Transcript text is untrusted input to mod
 Version 0.2 adds `web` (FastAPI plus static assets) and `chat` (configuration,
 sessions, provider, bounded tools, agent and validation). One process owns the
 embedding model/Qdrant client for its lifetime and serializes retrieval access.
-SQLite connections are opened in the query worker thread. Stop chat before index
-maintenance. No source schema migration is needed for conversation memory.
+SQLite connections are opened in the query worker thread. Stop chat before external
+CLI index maintenance. UI maintenance is serialized inside the service.
 
 Browser requests receive server-issued session cookies. Per-session locks order
 turns and deduplicate completed requests; a TTL and capacity limit bound process
@@ -45,3 +45,18 @@ quotes and valid source bounds; a separate model assessment checks support befor
 the server derives status and renders claims. A correction can use the remaining
 request budget. Draft output is never streamed to the UI. Tool and transcript text
 cannot authorize new tools or alter this policy.
+
+Version 0.3 introduces `chat/history.py` for separate durable app state and
+`web/library.py` for background ingestion/index jobs. The browser owner token is
+hashed in conversation records; SQLite connections are short-lived and thread-local.
+Conversation reads are owner-scoped, and durable request IDs deduplicate retries.
+Full saved transcripts are paginated for display; only three accepted pairs hydrate
+model memory. New chat clears transient session state, preserving durable history.
+
+An application operation lock serializes chat and library maintenance. A job marks
+maintenance immediately, waits for active chat, fetches/validates requested captions,
+backs up source SQLite, reprocesses raw inputs, imports usable videos and rebuilds
+the existing Qdrant client under its corpus lock. Corpus metadata refreshes only
+after successful indexing. Failures retain a repair state, never a ready stale index.
+Restart marks interrupted jobs failed. Processing-version changes automatically
+schedule cleanup from saved raw captions; no OpenAI calls are required.

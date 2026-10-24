@@ -1,6 +1,6 @@
 # Local RAG chat
 
-Version 0.2 serves a plain browser UI from FastAPI. The existing 20-video playlist
+Version 0.3 serves a plain browser UI from FastAPI. The existing 20-video playlist
 and multilingual index stay local. The configured OpenAI model handles query
 planning, cited answer generation and a separate support assessment.
 
@@ -41,6 +41,7 @@ to the browser. Do not paste it into a question.
 | `KB_EMBEDDING_MODEL` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` |
 | `FASTEMBED_CACHE_PATH` | Set to `data/models/fastembed` in `.env.example` |
 | `CHAT_MEMORY_TURNS` | 3 completed exchanges |
+| `CHAT_STATE_DB` | `data/live/app.sqlite3`, saved chats and library jobs |
 | `CHAT_SESSION_TTL` | 3600 seconds of inactivity |
 | `CHAT_MAX_REQUESTS` | 4 provider requests per turn |
 | `CHAT_DEADLINE` | 60 seconds per turn |
@@ -64,13 +65,53 @@ Click a numbered citation to expand the original passage and timestamp link.
 Statements are attributed to the video; this corpus is not an independent fact check
 of its historical claims. All current playlist captions are generated automatically.
 
-Enter sends; Shift+Enter inserts a line break. New chat clears the page and session.
+Enter sends; Shift+Enter inserts a line break. New chat starts an empty conversation
+and preserves earlier conversations in **Saved chats**.
 The page may display older exchanges, while each model request receives at most the
 last three completed pairs, trimmed further if necessary to fit the memory budget.
 Follow-ups search again; old model answers never become source evidence. Failed or
-cancelled requests do not enter memory. Sessions are isolated, expire after inactivity
-and disappear on restart. There is no saved conversation history. A bounded cache
-of completed request IDs prevents duplicated replies when a request is retried.
+cancelled requests do not enter memory. Transient sessions expire after inactivity;
+saved conversations survive restarts in the separate local SQLite state database.
+Click a saved title to reopen its messages, original citation envelopes and notices.
+Long conversations have a Load older messages button; the saved-chat list also pages.
+The reopened conversation restores only three accepted pairs for the next request,
+trimmed further by the input budget. Durable completed request IDs prevent repeated
+paid calls for a retried request after restart.
+
+A year-long HttpOnly browser owner cookie scopes saved-chat access. The selected chat
+ID is kept in local storage. Clearing browser cookies creates a different owner;
+this version has no account synchronization or history recovery UI. Questions and
+answers are stored unencrypted on this device under ignored `data/`. Back up the
+state database to retain conversations. Viewing a saved answer does not call OpenAI;
+its source card preserves the excerpt as it was when that answer was generated.
+
+## Manage playlists and clean captions
+
+Open **Manage library**, paste an HTTPS YouTube playlist URL (a watch URL with `list=`
+also works), choose 1–100 videos and comma-separated caption languages, then select
+Import playlist. The background job lists videos, fetches captions, processes chunks
+and rebuilds the local index. Progress and per-video failures remain visible across
+reloads. Partial imports retain usable videos. Duplicate video imports are idempotent;
+playlist membership records the successfully imported selection from that run.
+
+Recognized audio labels such as `[Music]`, `[музыка]`, `[applause]` and `[смех]` are
+removed from derived searchable text. Music-note characters are removed while sung
+words remain. Unknown bracketed content, dates and speaker labels stay intact.
+Raw captions and timestamps remain stored; surviving segment IDs keep their original
+positions. Standalone cue segments produce no evidence chunks. This is conservative
+cue removal, not grammatical correction or ASR repair.
+
+The first start after a processing-version change automatically backs up source
+SQLite under `data/live/backups/`, reprocesses saved raw captions and rebuilds vectors.
+**Clean and rebuild** repeats this operation without downloading videos. The existing
+playlist was upgraded: 329 standalone cue segments omitted from search, 33,052 raw
+segments retained, 20 videos and 1,416 cleaned chunks indexed.
+
+Only one library job runs at a time. It waits for active questions and pauses new
+ones until the index is ready. Interrupted jobs are marked failed after restart;
+retry them from the panel. If an index rebuild fails, chat remains unavailable until
+Clean and rebuild repairs it. Job metadata and playlist selections share the state
+database with conversations; transcript content remains in the source database.
 
 No-support and partial-support notices appear inside the answer and survive Copy
 answer. Citation-validation failures suppress the draft. API/index failures have a
@@ -92,8 +133,9 @@ Model-assisted support checking can miss errors; exact quote/provenance checks d
 not prove that every claim follows from the source. Relevance review remains pending.
 
 Use one process/worker without reload. One corpus owns the embedding model and local
-Qdrant client; SQLite connections are created in their query threads. Stop chat before
-ingesting/reindexing, then restart. Missing, stale or mismatched indexes give an
+Qdrant client; SQLite connections are created in their query threads. UI maintenance
+serializes writes and indexing. Stop chat before using external CLI ingestion/indexing,
+then restart. Missing, stale or mismatched indexes give an
 explicit readiness error. This is a local application, without public-hosting auth.
 
 ## Verification

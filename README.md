@@ -2,7 +2,8 @@
 
 A local YouTube transcript knowledge base with source timestamps, hierarchical
 retrieval and a reproducible evaluation harness. Python 3.12+, no service or API
-key needed for the offline baseline. Version 0.2.0 adds a local browser RAG chat.
+key needed for the offline baseline. Version 0.3.0 includes browser RAG chat,
+playlist management, cleaned captions and saved conversations.
 
 For the validated 20-video Russian playlist, isolated runtime setup and ready-to-run
 queries, see [the live environment guide](docs/LIVE_PLAYLIST.md).
@@ -21,6 +22,9 @@ With the live environment and playlist already present:
 
 Open [the local chat](http://127.0.0.1:8000/). The default model is `gpt-6-luna`.
 Chat questions make billable OpenAI requests. The API key stays on the server.
+Use **Manage library** to import a playlist, choose the video limit/caption languages,
+and monitor progress. **Saved chats** reopens conversations after a reload or restart;
+the model still receives at most three recent completed exchanges.
 
 ## Quick start (PowerShell)
 

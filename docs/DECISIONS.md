@@ -30,6 +30,15 @@
     verification failure and API failure distinct; never fall back to uncited facts.
 13. Treat automated citation validity and model support judgments as separate from
     human entailment review. Benchmark results remain preliminary until reviewed.
+14. Remove only recognized non-speech annotations from derived caption text. Preserve
+    unknown bracketed phrases and immutable raw inputs. Version the transformation
+    and rebuild indexes after cleanup; do not silently alter source timestamps.
+15. Persist local app state in a separate SQLite database. Saved source envelopes
+    survive index changes; reusing a conversation still requires fresh retrieval.
+    Browser owner cookies scope history, with no cloud synchronization in this phase.
+16. Coordinate UI ingestion with chat through a shared operation lock and corpus
+    lock. Reuse the resident embedding/index client for rebuilds. Durable job status
+    exposes partial and interrupted imports; index failures require explicit repair.
 
 Requirements from the prior discussion about phase review gates were proposals.
 The current user request authorizes specs, planning and the first implementation

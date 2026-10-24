@@ -73,6 +73,19 @@ class Store:
             )
         return True
 
+    def needs_reprocessing(self) -> bool:
+        return any(
+            digest != hashlib.sha256((PROCESSING_VERSION + raw).encode()).hexdigest()
+            for digest, raw in self.db.execute("SELECT hash, raw FROM videos")
+        )
+
+    def reprocess(self) -> int:
+        originals = [
+            VideoInput.model_validate_json(row[0])
+            for row in self.db.execute("SELECT raw FROM videos ORDER BY id")
+        ]
+        return sum(self.import_video(video) for video in originals)
+
     @staticmethod
     def make_documents(p: ProcessedVideo) -> list[Document]:
         docs = [
