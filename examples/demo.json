@@ -1,0 +1,19 @@
+{
+  "video_id": "DEMOvideo01",
+  "title": "Synthetic demo: Evaluating AI agents",
+  "channel": "KBfromYT test fixtures (not a real video)",
+  "language": "en",
+  "duration": 120,
+  "transcript_source": "import",
+  "chapters": [
+    {"start": 0, "title": "Agent evaluation"},
+    {"start": 60, "title": "Production monitoring"}
+  ],
+  "segments": [
+    {"start": 0, "end": 20, "text": "Final answer correctness alone is insufficient for evaluating an agent."},
+    {"start": 20, "end": 40, "text": "Trajectory evaluation checks tool selection, tool arguments, and intermediate steps."},
+    {"start": 40, "end": 60, "text": "A judge should examine whether the selected tools support the requested task."},
+    {"start": 60, "end": 90, "text": "Production monitoring records latency, errors, token costs, and user feedback."},
+    {"start": 90, "end": 120, "text": "Offline benchmarks should be compared with production outcomes before changing the agent."}
+  ]
+}

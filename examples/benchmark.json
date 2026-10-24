@@ -1,0 +1,5 @@
+[
+  {"query": "trajectory tool selection", "relevant": [{"video_id": "DEMOvideo01", "start": 20, "end": 40}]},
+  {"query": "production latency monitoring", "relevant": [{"video_id": "DEMOvideo01", "start": 60, "end": 90}]},
+  {"query": "photosynthesis chlorophyll", "relevant": []}
+]
