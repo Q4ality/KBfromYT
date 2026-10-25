@@ -5,6 +5,7 @@ import youtube_transcript_api
 import yt_dlp
 
 from kbfromyt.ingest import enumerate_videos, fetch_video
+from kbfromyt.ingest_errors import IngestError
 
 
 class MetadataClient:
@@ -45,14 +46,22 @@ def test_youtube_adapter_maps_metadata_and_captions(monkeypatch):
 
 def test_blocked_request_never_triggers_whisper(monkeypatch):
     def blocked(vid):
-        raise RuntimeError("blocked request")
+        raise youtube_transcript_api.IpBlocked(vid)
 
     monkeypatch.setattr(yt_dlp, "YoutubeDL", MetadataClient)
     monkeypatch.setattr(
         youtube_transcript_api, "YouTubeTranscriptApi", lambda: SimpleNamespace(list=blocked)
     )
-    with pytest.raises(RuntimeError, match="blocked request"):
+
+    def forbidden(*_):
+        pytest.fail("A block must never download or transcribe audio")
+
+    monkeypatch.setattr("kbfromyt.ingest.transcribe", forbidden)
+    monkeypatch.setattr("kbfromyt.ingest.tempfile.TemporaryDirectory", forbidden)
+    with pytest.raises(IngestError) as error:
         fetch_video("dQw4w9WgXcQ", ["en"], whisper=True)
+    assert error.value.code == "youtube_blocked"
+    assert error.value.stop_collection
 
 
 def test_caption_absence_explains_fallback(monkeypatch):

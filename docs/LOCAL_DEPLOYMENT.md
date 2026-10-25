@@ -208,6 +208,8 @@ replace your complete source/state backup.
 | Missing/stale index | Use Manage library to rebuild; if a copied index cannot open, move it aside while stopped, then restart. |
 | No key / unauthorized model | Check the root `.env`, environment overrides and account/model access, then restart. Never include the key in logs you share. |
 | Playlist import partially fails | Inspect job failures, wait for rate limits if relevant, then retry. Imported sources remain usable. |
+| YouTube blocks downloads / HTTP 429 | Captions may still exist. The app stops remaining downloads and applies a five-minute minimum pause, retained across restarts. YouTube may require longer. Retry import manually after waiting; no paid model call or index rebuild can remove a YouTube block. Existing library chat and local rebuild remain available. |
+| Caption language unavailable | Select an available caption language and retry. This is distinct from a YouTube connection block. |
 
 This release serves one local user with one server process. It has no public
 authentication, remote-user management, service auto-start, packaged installer,

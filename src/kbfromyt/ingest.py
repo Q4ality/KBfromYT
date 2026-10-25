@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from kbfromyt.ingest_errors import IngestError, classify_ingest_error
 from kbfromyt.models import RawSegment, SourceChapter, VideoInput
 
 
@@ -66,9 +67,14 @@ def fetch_video(
             "retries": 2,
         }
     ) as client:
-        info = client.extract_info(url, download=False)
+        try:
+            info = client.extract_info(url, download=False)
+        except Exception as exc:
+            raise classify_ingest_error(exc, "metadata") from exc
     if not info:
-        raise ValueError("YouTube returned no metadata")
+        raise IngestError(
+            "metadata_unavailable", "YouTube returned no video metadata.", stage="metadata"
+        )
     language = languages[0]
     try:
         track = select_track(YouTubeTranscriptApi().list(vid), languages)
@@ -82,7 +88,10 @@ def fetch_video(
         language = track.language_code
     except (NoTranscriptFound, TranscriptsDisabled) as exc:
         if not whisper:
-            raise RuntimeError("captions unavailable; use --whisper for audio fallback") from exc
+            error = classify_ingest_error(exc)
+            raise IngestError(
+                error.code, str(error) + " Use --whisper for explicit audio fallback."
+            ) from exc
         with tempfile.TemporaryDirectory(prefix="kbfromyt-") as directory:
             with yt_dlp.YoutubeDL(
                 {
@@ -98,6 +107,9 @@ def fetch_video(
             segments = transcribe(Path(directory) / "audio.wav", whisper_model)
         source = "whisper"
         language = "und"  # Automatic language detection; no unverified requested-language label.
+    except Exception as exc:
+        # Blocks/network failures never enable the optional audio fallback.
+        raise classify_ingest_error(exc) from exc
     if not segments:
         raise ValueError("video has no usable transcript segments")
     return VideoInput(

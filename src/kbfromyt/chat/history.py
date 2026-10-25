@@ -185,6 +185,17 @@ class History:
                 for row in db.execute("SELECT body FROM library_jobs ORDER BY rowid DESC LIMIT 10")
             ]
 
+    def import_cooldown(self) -> float:
+        # A local rebuild may move a blocked job outside the ten visible entries.
+        with self.connect() as db:
+            return max(
+                (
+                    json.loads(row[0]).get("retry_not_before", 0)
+                    for row in db.execute("SELECT body FROM library_jobs")
+                ),
+                default=0,
+            )
+
     def save_playlist(self, playlist: dict) -> None:
         with self.connect() as db:
             db.execute(

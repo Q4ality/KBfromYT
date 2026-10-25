@@ -3,6 +3,7 @@ const $ = id => document.getElementById(id);
 let busy = false;
 let ready = false;
 let libraryBusy = false;
+let importCooldownUntil = 0;
 let currentConversation = null;
 let savedCount = 0;
 let viewTurns = [];
@@ -39,7 +40,10 @@ function setBusy(value) {
   $("recover-request").disabled=value||recoveryBusy;
   $("new-attempt").disabled=value||recoveryBusy;
   $("composer").setAttribute("aria-busy", String(value));
-  $("import-playlist").disabled = value || libraryBusy;
+  $("import-playlist").disabled = value || libraryBusy || Date.now()<importCooldownUntil*1000;
+  document.querySelectorAll("[data-import-retry]").forEach(button=>{
+    button.disabled=value||libraryBusy||Date.now()<Number(button.dataset.retryNotBefore||0)*1000;
+  });
   $("rebuild-library").disabled = value || libraryBusy;
   $("load-older").disabled = value;
   document.querySelectorAll(".conversation-button").forEach(button => { button.disabled = value || Boolean(pendingRequest); });
@@ -253,6 +257,7 @@ async function loadLibrary() {
   try {
     const response=await fetch("/api/library");if(!response.ok)throw new Error();const data=await response.json();
     libraryBusy=Boolean(data.active_job);
+    importCooldownUntil=data.import_retry_not_before||0;
     scopeLibrary=data;renderChatScope();
     $("library-summary").textContent=`· ${data.videos.length} videos`;
     $("library-videos").replaceChildren(...data.videos.map(v=>element("li",`${v.title} · ${v.language.toUpperCase()} · ${v.chunks} chunks`)));
@@ -267,12 +272,21 @@ async function loadLibrary() {
     for(const [index,job] of data.jobs.entries()){
       const details=element("details",undefined,`job ${job.status}`);details.open=index===0;
       details.append(element("summary",`${job.kind==="import"?"Playlist import":"Clean and rebuild"} · ${job.status}`),element("p",job.message));
-      if(job.total){const bar=element("progress");bar.max=job.total;bar.value=job.completed;details.append(bar,element("span",` ${job.completed}/${job.total} fetched · ${job.failed} failed`));}
+      if(job.total){const bar=element("progress");bar.max=job.total;bar.value=job.completed;details.append(bar,element("span",` ${job.completed}/${job.total} checked · ${job.indexed??(job.results||[]).filter(r=>r.status==="indexed").length} indexed · ${job.failed} failed · ${job.skipped||0} not attempted`));}
+      if(job.retry_not_before&&Date.now()<job.retry_not_before*1000){
+        details.append(element("p",`Downloads paused until at least ${new Date(job.retry_not_before*1000).toLocaleTimeString()}. This is local backoff; YouTube may require longer.`));
+      }
       if(job.changed!==undefined)details.append(element("p",`${job.changed} videos updated`));
-      if(job.results.length){const items=element("ul");for(const item of job.results)items.append(element("li",`${item.title||item.video_id}: ${item.status}${item.message?" — "+item.message:""}`));details.append(items);}
+      if((job.results||[]).length){const items=element("ul");for(const item of job.results)items.append(element("li",`${item.title||item.video_id}: ${item.status.replaceAll("_"," ")}${item.message?" — "+item.message:""}`));details.append(items);}
+      if(job.request&&["failed","partial","blocked"].includes(job.status)){
+        const retry=element("button","Retry import","secondary");retry.type="button";
+        retry.dataset.importRetry="true";retry.dataset.retryNotBefore=String(data.import_retry_not_before||0);
+        retry.addEventListener("click",()=>libraryAction("/api/library/import",job.request));details.append(retry);
+      }
       progress.append(details);
     }
     if(libraryBusy){$("library-panel").open=true;libraryPoll=setTimeout(loadLibrary,1500);}
+    else if(Date.now()<importCooldownUntil*1000){libraryPoll=setTimeout(loadLibrary,Math.min(30000,importCooldownUntil*1000-Date.now()));}
     await loadStatus();setBusy(busy);
   } catch { $("library-progress").textContent="Cannot load library status. Reload to try again."; }
 }

@@ -15,3 +15,4 @@ main{margin-left:252px}.topbar{height:77px;border-bottom:1px solid var(--border)
 .chat-scope select { max-width:100%; padding:8px; border:1px solid #dce3dc; border-radius:8px; background:white; }
 #chat-videos { width:min(560px,80vw); }
 [hidden] { display:none !important; }
+.job.blocked summary { color:#9a632f; }

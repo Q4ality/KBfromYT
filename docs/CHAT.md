@@ -125,7 +125,19 @@ also works), choose 1–100 videos and comma-separated caption languages, then s
 Import playlist. The background job lists videos, fetches captions, processes chunks
 and rebuilds the local index. Progress and per-video failures remain visible across
 reloads. Partial imports retain usable videos. Duplicate video imports are idempotent;
-playlist membership records the successfully imported selection from that run.
+playlist membership records the successfully imported selection. A partial retry
+also retains previously imported members of that playlist.
+
+Failures distinguish caption-language mismatch, absent captions, network errors
+and YouTube blocking/rate limits. A connection-wide failure stops the remaining
+downloads; these videos are **not attempted**, rather than reported as failed.
+Successfully downloaded videos are indexed, and the existing library remains usable.
+After a block, downloads pause for at least five minutes, including after a server
+restart. This is local backoff; YouTube may require longer. There is no automatic retry.
+**Retry import** repeats the original URL, limit and language settings once the pause
+expires. Clean and rebuild remains available because it uses saved transcripts.
+An HTTP 429 / `IpBlocked` does not mean that the playlist has no captions. The UI
+never switches to audio transcription automatically.
 
 Recognized audio labels such as `[Music]`, `[музыка]`, `[applause]` and `[смех]` are
 removed from derived searchable text. Music-note characters are removed while sung

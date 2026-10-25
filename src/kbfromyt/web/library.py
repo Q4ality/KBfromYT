@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import sqlite3
 import time
 from contextlib import nullcontext
@@ -14,6 +15,7 @@ from kbfromyt.chat.history import History
 from kbfromyt.chat.service import ChatService
 from kbfromyt.chat.tools import Corpus
 from kbfromyt.ingest import enumerate_videos, fetch_video
+from kbfromyt.ingest_errors import IngestError, classify_ingest_error
 from kbfromyt.models import Contract, VideoInput
 from kbfromyt.processing import process
 from kbfromyt.semantic import FastEmbedder, SemanticIndex
@@ -62,6 +64,7 @@ class Library:
         self.task: asyncio.Task | None = None
         self.job: dict | None = None
         self.stopping = False
+        self.cooldown_until = history.import_cooldown()
         for job in history.jobs():
             if job["status"] in ACTIVE:
                 job.update(status="failed", message="Interrupted by server restart. Retry the job.")
@@ -103,6 +106,7 @@ class Library:
             "playlists": self.history.playlists(),
             "jobs": self.history.jobs(),
             "active_job": self.job if self.active else None,
+            "import_retry_not_before": self.cooldown_until,
         }
 
     def overview(self, playlist: str | None = None, offset: int = 0, limit: int = 10) -> dict:
@@ -135,6 +139,12 @@ class Library:
     def start(self, request: PlaylistRequest | None = None) -> dict:
         if self.active:
             raise ValueError("A library job is already running.")
+        if request and time.time() < self.cooldown_until:
+            remaining = math.ceil(self.cooldown_until - time.time())
+            raise ValueError(
+                f"YouTube downloads are paused. Wait {remaining} seconds before retrying. "
+                "YouTube may require a longer wait; existing library chat still works."
+            )
         self.job = {
             "id": uuid4().hex,
             "kind": "import" if request else "rebuild",
@@ -145,8 +155,11 @@ class Library:
             "completed": 0,
             "total": 0,
             "failed": 0,
+            "skipped": 0,
+            "indexed": 0,
             "results": [],
             "url": request.url if request else None,
+            "request": request.model_dump(mode="json") if request else None,
         }
         self.history.save_job(self.job)
         self.service.maintenance = True
@@ -157,33 +170,64 @@ class Library:
         try:
             async with self.service.operation_lock:
                 inputs: list[VideoInput] = []
+                blocked: IngestError | None = None
                 if request:
                     self.update(status="listing", message="Listing playlist videos…")
                     ids = await asyncio.to_thread(enumerate_videos, request.url, request.limit)
                     if not ids:
-                        raise ValueError("The playlist returned no videos.")
+                        raise IngestError(
+                            "playlist_empty", "The playlist returned no videos.", stage="listing"
+                        )
                     self.update(status="downloading", total=len(ids))
                     for number, vid in enumerate(ids, 1):
                         if self.stopping:
                             raise RuntimeError("Server is shutting down. Retry the job.")
                         self.update(message=f"Fetching captions {number}/{len(ids)}: {vid}")
+                        stage = "captions"
                         try:
                             video = await asyncio.to_thread(fetch_video, vid, request.languages)
+                            stage = "processing"
                             await asyncio.to_thread(process, video)
                             inputs.append(video)
                             result = {"video_id": vid, "title": video.title, "status": "downloaded"}
-                        except Exception:
+                        except Exception as exc:
+                            failure = classify_ingest_error(exc, stage)
                             result = {
                                 "video_id": vid,
                                 "status": "failed",
-                                "message": "Could not fetch metadata or requested captions.",
+                                **failure.details(),
+                                "error_type": type(exc.__cause__ or exc).__name__,
                             }
                             self.job["failed"] += 1
+                            if failure.stop_collection:
+                                blocked = failure
+                                self.cooldown_until = time.time() + failure.retry_after_seconds
+                                self.update(
+                                    retry_not_before=self.cooldown_until, error_code=failure.code
+                                )
                         self.job["results"].append(result)
                         self.update(completed=number)
+                        if blocked:
+                            for skipped in ids[number:]:
+                                self.job["results"].append(
+                                    {
+                                        "video_id": skipped,
+                                        "status": "not_attempted",
+                                        "message": (
+                                            "Not requested after the connection-wide "
+                                            "YouTube failure. Retry later."
+                                        ),
+                                    }
+                                )
+                            self.update(skipped=len(ids) - number)
+                            break
                     if not inputs:
-                        raise ValueError(
-                            "No usable captions were downloaded. Check per-video results."
+                        if blocked:
+                            raise blocked
+                        raise IngestError(
+                            "no_usable_captions",
+                            "No usable captions were downloaded. Check the per-video reasons "
+                            "and requested languages before retrying.",
                         )
                 self.update(
                     status="processing", message="Backing up and cleaning transcript chunks…"
@@ -194,11 +238,19 @@ class Library:
                 )
                 await asyncio.to_thread(self.rebuild)
                 if request:
+                    playlist_id = parse_qs(urlparse(request.url).query)["list"][0]
+                    previous = next(
+                        (p for p in self.history.playlists() if p["id"] == playlist_id), {}
+                    )
+                    selected = [v.video_id for v in inputs]
+                    if self.job["failed"] or self.job["skipped"]:
+                        selected = list(dict.fromkeys([*previous.get("video_ids", []), *selected]))
                     self.history.save_playlist(
                         {
-                            "id": parse_qs(urlparse(request.url).query)["list"][0],
+                            **previous,
+                            "id": playlist_id,
                             "url": request.url,
-                            "video_ids": [v.video_id for v in inputs],
+                            "video_ids": selected,
                             "updated": time.time(),
                         }
                     )
@@ -206,8 +258,11 @@ class Library:
                     if result["status"] == "downloaded":
                         result["status"] = "indexed"
                 self.update(
+                    indexed=len(inputs),
                     status="partial" if self.job["failed"] else "completed",
-                    message="Library ready. Some videos failed; see details."
+                    message=f"Indexed {len(inputs)} videos before downloads were paused. {blocked}"
+                    if blocked
+                    else "Library ready. Some videos failed; see details."
                     if self.job["failed"]
                     else "Library ready for questions.",
                 )
@@ -226,12 +281,16 @@ class Library:
                 self.service.readiness_error = (
                     "Index update failed. Use Clean and rebuild to repair the library."
                 )
-            message = (
-                str(exc)
-                if isinstance(exc, (ValueError, RuntimeError))
-                else "Library update failed. Retry the job."
+            failure = classify_ingest_error(exc, self.job["status"])
+            if failure.stop_collection:
+                self.cooldown_until = max(
+                    self.cooldown_until, time.time() + failure.retry_after_seconds
+                )
+            self.update(
+                status="blocked" if failure.stop_collection else "failed",
+                retry_not_before=self.cooldown_until,
+                **failure.details(),
             )
-            self.update(status="failed", message=message)
         finally:
             self.service.maintenance = False
 
