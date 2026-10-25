@@ -10,7 +10,7 @@ from kbfromyt.chat.memory import budget_size
 from kbfromyt.models import Evidence, ProcessedVideo
 from kbfromyt.overviews import content_terms
 from kbfromyt.retrieval import broad_search, search
-from kbfromyt.semantic import INDEX_VERSION, FastEmbedder, SemanticIndex
+from kbfromyt.semantic import INDEX_VERSION, FastEmbedder, IndexProgress, SemanticIndex
 from kbfromyt.store import Store
 
 
@@ -91,10 +91,14 @@ class Corpus:
         if store.snapshot_hash() != self.snapshot:
             raise ValueError("Source database changed. Stop chat, reindex and restart.")
 
-    def rebuild(self) -> int:
+    def rebuild(self, *, progress: IndexProgress | None = None, skip_current: bool = False) -> int:
         with self.lock, Store(self.config.db) as store:
             store.refresh_overviews()
-            count = self.semantic.rebuild(store) if self.semantic else 0
+            count = (
+                self.semantic.rebuild(store, progress=progress, skip_current=skip_current)
+                if self.semantic
+                else 0
+            )
             self.videos = {p.video.video_id: p for p in store.videos()}
             self.snapshot = store.snapshot_hash()
             return count

@@ -272,7 +272,18 @@ async function loadLibrary() {
     for(const [index,job] of data.jobs.entries()){
       const details=element("details",undefined,`job ${job.status}`);details.open=index===0;
       details.append(element("summary",`${job.kind==="import"?"Playlist import":"Clean and rebuild"} · ${job.status}`),element("p",job.message));
+      if(job.error_code==="youtube_blocked")details.append(element("p","This affects new caption downloads. Rebuilding saved videos does not restore YouTube access."));
+      if(job.created){
+        const active=["queued","listing","downloading","processing","indexing"].includes(job.status);
+        const seconds=Math.max(0,Math.floor((active?Date.now()/1000:job.finished||job.updated)-job.created));
+        details.append(element("p",`Elapsed ${Math.floor(seconds/60)}m ${seconds%60}s · Last progress ${new Date(job.updated*1000).toLocaleTimeString()}`));
+      }
       if(job.total){const bar=element("progress");bar.max=job.total;bar.value=job.completed;details.append(bar,element("span",` ${job.completed}/${job.total} checked · ${job.indexed??(job.results||[]).filter(r=>r.status==="indexed").length} indexed · ${job.failed} failed · ${job.skipped||0} not attempted`));}
+      if(job.index_total){
+        const bar=element("progress");bar.max=job.index_total;bar.value=job.index_completed;
+        const unit=job.index_stage==="preparing"?"documents":"embedding windows";
+        details.append(bar,element("span",` ${job.index_completed.toLocaleString()}/${job.index_total.toLocaleString()} ${unit} · ${Math.floor(job.index_completed/job.index_total*100)}%`));
+      }
       if(job.retry_not_before&&Date.now()<job.retry_not_before*1000){
         details.append(element("p",`Downloads paused until at least ${new Date(job.retry_not_before*1000).toLocaleTimeString()}. This is local backoff; YouTube may require longer.`));
       }

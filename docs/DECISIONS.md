@@ -63,6 +63,13 @@
     treating interrupted external provider work as uncertain rather than retrying
     it automatically.
 
+24. Verify the source/model/format and exact expected point IDs before reusing an
+    unchanged semantic index during UI maintenance. Report preparation and embedding
+    batch progress separately from import counts. Clear old points through Qdrant's
+    public API before recreating collections, because local directory removal can
+    fail on Windows. Remove positively identified obsolete IDs without re-embedding
+    verified current windows; missing IDs still require a rebuild.
+
 Requirements from the prior discussion about phase review gates were proposals.
 The current user request authorizes specs, planning and the first implementation
 in one pass. Deferred research features remain explicit future milestones.

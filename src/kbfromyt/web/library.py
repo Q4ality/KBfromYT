@@ -264,7 +264,10 @@ class Library:
                     if blocked
                     else "Library ready. Some videos failed; see details."
                     if self.job["failed"]
+                    else "Library ready. Verified the existing index; no embeddings recomputed."
+                    if self.job.get("index_reused")
                     else "Library ready for questions.",
+                    finished=time.time(),
                 )
         except Exception as exc:
             # A failed write/index never leaves a stale corpus ready for questions.
@@ -289,6 +292,7 @@ class Library:
             self.update(
                 status="blocked" if failure.stop_collection else "failed",
                 retry_not_before=self.cooldown_until,
+                finished=time.time(),
                 **failure.details(),
             )
         finally:
@@ -306,10 +310,26 @@ class Library:
             changed += sum(store.import_video(video) for video in inputs)
         return changed
 
+    def index_progress(self, stage: str, completed: int, total: int) -> None:
+        messages = {
+            "preparing": "Preparing source documents",
+            "checking": "Checking saved embedding windows",
+            "pruning": "Removing obsolete embedding windows",
+            "embedding": "Embedding and saving source windows",
+            "current": "Saved index verified; reusing existing embeddings",
+        }
+        self.update(
+            index_stage=stage,
+            index_completed=completed,
+            index_total=total,
+            index_reused=stage == "current",
+            message=f"{messages[stage]}: {completed:,}/{total:,}.",
+        )
+
     def rebuild(self) -> None:
         service = self.service
         if service.corpus:
-            service.corpus.rebuild()
+            service.corpus.rebuild(progress=self.index_progress, skip_current=True)
         else:
             if service.config.semantic:
                 index = SemanticIndex(
@@ -317,7 +337,7 @@ class Library:
                 )
                 try:
                     with Store(service.config.db) as store:
-                        index.rebuild(store)
+                        index.rebuild(store, progress=self.index_progress, skip_current=True)
                 finally:
                     index.close()
             service.corpus = Corpus(service.config)

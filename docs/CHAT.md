@@ -148,7 +148,14 @@ cue removal, not grammatical correction or ASR repair.
 
 The first start after a processing-version change automatically backs up source
 SQLite under `data/live/backups/`, reprocesses saved raw captions and rebuilds vectors.
-**Clean and rebuild** repeats this operation without downloading videos. The existing
+**Clean and rebuild** repeats this operation without downloading videos. It first
+checks whether the saved source snapshot, model, index format and expected point IDs
+are current. If they are, it reuses the saved embeddings; obsolete extra points are
+removed without recomputing current vectors. Missing points or changed sources/model/
+format require a rebuild. The panel shows preparation, window verification or embedding
+batch progress, elapsed time and the last progress update. Progress counts embedding
+windows separately from downloaded videos. It does not promise a completion time.
+The existing
 playlist was upgraded: 329 standalone cue segments omitted from search, 33,052 raw
 segments retained, 20 videos and 1,416 cleaned chunks indexed.
 

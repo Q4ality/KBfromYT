@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -10,6 +11,7 @@ from kbfromyt.store import Store
 
 DEFAULT_MODEL = "BAAI/bge-small-en-v1.5"
 INDEX_VERSION = "token-windows-v2"
+IndexProgress = Callable[[str, int, int], None]
 
 
 @dataclass(frozen=True)
@@ -97,24 +99,38 @@ class SemanticIndex:
     def close(self) -> None:
         self.client.close()
 
-    def rebuild(self, store: Store) -> int:
+    def rebuild(
+        self, store: Store, *, progress: IndexProgress | None = None, skip_current: bool = False
+    ) -> int:
         from qdrant_client import models
 
-        self.manifest.unlink(missing_ok=True)
+        def report(stage: str, done: int, total: int) -> None:
+            if progress:
+                progress(stage, done, total)
+
         store.refresh_overviews()
         docs = store.documents()
         if not docs:
             raise ValueError("import at least one video before indexing")
-        windows = [
-            (d, window)
-            for d in docs
-            for window in (
-                self.embedder.windows(d.text)
+        report("preparing", 0, len(docs))
+        windows = []
+        for number, doc in enumerate(docs, 1):
+            parts = (
+                self.embedder.windows(doc.text)
                 if hasattr(self.embedder, "windows")
-                else [TextWindow(0, len(d.text), d.text, 0)]
+                else [TextWindow(0, len(doc.text), doc.text, 0)]
             )
-        ]
+            windows.extend((doc, window) for window in parts)
+            if number % 32 == 0 or number == len(docs):
+                report("preparing", number, len(docs))
+        expected_ids = {str(uuid5(NAMESPACE_URL, f"{d.id}:{w.start}:{w.end}")) for d, w in windows}
+        if skip_current and self.reuse_current(store, expected_ids, report):
+            report("current", len(windows), len(windows))
+            return len(docs)
+        self.manifest.unlink(missing_ok=True)
+        self._query_vectors.clear()
         created = False
+        report("embedding", 0, len(windows))
         for first in range(0, len(windows), 128):
             batch = windows[first : first + 128]
             vectors = self.embedder.embed([w.text for _, w in batch])
@@ -122,6 +138,11 @@ class SemanticIndex:
                 raise ValueError("embedding provider returned incomplete vectors")
             if not created:
                 if self.client.collection_exists("documents"):
+                    # Windows may retain the directory despite delete_collection.
+                    # Clear through the public API so stale points cannot reappear.
+                    self.client.delete(
+                        "documents", models.FilterSelector(filter=models.Filter()), wait=True
+                    )
                     self.client.delete_collection("documents")
                 self.client.create_collection(
                     "documents",
@@ -145,6 +166,9 @@ class SemanticIndex:
                 for (d, w), v in zip(batch, vectors, strict=True)
             ]
             self.client.upsert("documents", points=points, wait=True)
+            report("embedding", min(first + len(batch), len(windows)), len(windows))
+        if self.client.count("documents", exact=True).count != len(expected_ids):
+            raise ValueError("semantic index point count does not match completed windows")
         self.manifest.write_text(
             json.dumps(
                 {
@@ -160,6 +184,49 @@ class SemanticIndex:
             encoding="utf-8",
         )
         return len(docs)
+
+    def reuse_current(self, store: Store, expected_ids: set[str], report: IndexProgress) -> bool:
+        try:
+            metadata = json.loads(self.manifest.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return False
+        if (
+            metadata.get("snapshot") != store.snapshot_hash()
+            or metadata.get("model") != self.embedder.name
+            or metadata.get("index_version") != INDEX_VERSION
+            or metadata.get("count") != len(expected_ids)
+            or not self.client.collection_exists("documents")
+        ):
+            return False
+        actual: set[str] = set()
+        offset = None
+        report("checking", 0, len(expected_ids))
+        while True:
+            points, offset = self.client.scroll(
+                "documents", limit=256, offset=offset, with_payload=False, with_vectors=False
+            )
+            actual.update(str(p.id) for p in points)
+            report("checking", len(actual & expected_ids), len(expected_ids))
+            if offset is None:
+                break
+        if not expected_ids.issubset(actual):
+            return False
+        extra = list(actual - expected_ids)
+        if extra:
+            from qdrant_client import models
+
+            # An older collection recreation could leave obsolete IDs on disk.
+            # Preserve all expected vectors; remove only positively identified extras.
+            self.manifest.unlink(missing_ok=True)
+            report("pruning", 0, len(extra))
+            for first in range(0, len(extra), 256):
+                batch = extra[first : first + 256]
+                self.client.delete("documents", models.PointIdsList(points=batch), wait=True)
+                report("pruning", first + len(batch), len(extra))
+            if self.client.count("documents", exact=True).count != len(expected_ids):
+                raise ValueError("semantic index cleanup did not finish")
+            self.manifest.write_text(json.dumps(metadata), encoding="utf-8")
+        return True
 
     def search(
         self,

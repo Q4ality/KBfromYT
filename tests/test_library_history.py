@@ -196,7 +196,7 @@ def test_index_failure_exposes_repair_and_interrupted_jobs(store, video, tmp_pat
     assert history.jobs()[0]["status"] == "failed"
     real_rebuild = service.corpus.rebuild
 
-    def fail():
+    def fail(**_):
         raise RuntimeError("index failed")
 
     async def scenario():
@@ -208,6 +208,58 @@ def test_index_failure_exposes_repair_and_interrupted_jobs(store, video, tmp_pat
         library.start()
         await library.task
         assert library.job["status"] == "completed" and service.status()["ready"]
+        await service.close()
+
+    asyncio.run(scenario())
+
+
+def test_library_persists_index_progress_and_reuses_current_vectors(
+    store, video, tmp_path, monkeypatch
+):
+    from kbfromyt.semantic import SemanticIndex
+    from tests.test_semantic import TestVectors
+
+    store.import_video(video)
+    config = ChatConfig(
+        db=tmp_path / "kb.sqlite3",
+        index_dir=tmp_path / "vectors",
+        embedding_model=TestVectors.name,
+    )
+    with_index = SemanticIndex(config.index_dir, TestVectors())
+    with_index.rebuild(store)
+    with_index.close()
+    monkeypatch.setattr("kbfromyt.chat.tools.FastEmbedder", lambda _: TestVectors())
+    service = ChatService(config, ScriptedProvider(), Corpus(config))
+    history = History(tmp_path / "state.sqlite3")
+    library = Library(service, history)
+    events = []
+    save = history.save_job
+
+    def record(job):
+        save(job)
+        if job.get("index_stage"):
+            events.append((job["index_stage"], job["index_completed"], job["index_total"]))
+
+    monkeypatch.setattr(history, "save_job", record)
+
+    async def scenario():
+        # A changed source really rebuilds, with persisted batch completion.
+        video.title = "Updated source"
+        store.import_video(video)
+        library.start()
+        await library.task
+        assert library.job["status"] == "completed"
+        assert any(stage == "embedding" and done == total > 0 for stage, done, total in events)
+        assert history.jobs()[0]["finished"] >= library.job["created"]
+        # Repeating maintenance verifies IDs without running the embedder.
+        service.corpus.semantic.embedder.embed = lambda *_: pytest.fail("Unexpected embedding")
+        library.start()
+        await library.task
+        job = history.jobs()[0]
+        assert job["status"] == "completed" and job["index_reused"]
+        assert job["index_stage"] == "current" and job["index_completed"] == job["index_total"]
+        assert "no embeddings recomputed" in job["message"]
+        assert service.status()["ready"]
         await service.close()
 
     asyncio.run(scenario())
