@@ -60,11 +60,30 @@ blocking rule, duration, or prove that every request path or network will fail.
 
 ## Next discriminating check
 
-Check Show transcript in the user's ordinary Chrome/Edge session. If it works,
-investigate an explicit browser transcript import. If it also fails, compare a
-single request after a quiet period or through another user-selected connection.
-Subtitle-file import or local transcription of available audio remains a separate
-fallback; account cookies and paid proxy services require a deliberate choice.
+The user subsequently confirmed that actual timestamped transcript lines are
+visible via **В этом видео → Расшифровка видео**. Browser transcript availability
+is therefore confirmed for their working session. The anonymous in-app browser
+result must not be generalized to that session or interpreted as missing captions.
+
+A direct repeat through the player's **В этом видео** button selected the correct
+transcript tab, but the connected anonymous in-app session remained on loading.
+Only the Codex in-app browser and MCP Apps are available in the tool inventory;
+the user's working browser/session has not yet been identified or connected.
+Screenshot: ignored `data/live/transcript-panel-direct-tab.jpg`.
+
+One anonymous API experiment followed the `getTranscriptEndpoint` advertised in
+the public page, using its fresh parameters and web client context. Watch-page
+lookup succeeded (200); `/youtubei/v1/get_transcript` returned **400
+FAILED_PRECONDITION**, "Precondition check failed." It returned zero segments.
+This is distinct from the 429 at `/api/timedtext`; it does not establish which
+session/attestation precondition failed. Safe report:
+`data/live/transcript-panel-probe/diagnosis.json` (ignored).
+
+Next: identify/access the session where the user sees timestamped lines and test
+browser-assisted extraction there. Do not infer an IP ban, change networks, or
+claim transcript absence from the anonymous session result. User-supplied subtitle
+or transcript import remains an alternative. No user account cookies were exported
+or used, and no new source was written to the library in this follow-up.
 
 References: [EJS setup](https://github.com/yt-dlp/yt-dlp/wiki/EJS),
 [HTTP client dependencies](https://github.com/yt-dlp/yt-dlp#impersonation),
